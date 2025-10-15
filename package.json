@@ -1,0 +1,46 @@
+{
+  "name": "ai-trip-planner",
+  "version": "1.0.0",
+  "description": "AI-powered trip planner with multi-agent orchestration",
+  "main": "backend/main.py",
+  "scripts": {
+    "start": "cd backend && python3 -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload",
+    "dev": "cd backend && python3 -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload",
+    "install-deps": "pip install -r backend/requirements.txt",
+    "setup": "npm run install-deps && echo 'Setup complete! Run npm start to begin development.'",
+    "test": "cd backend && python3 -m pytest",
+    "lint": "cd backend && python3 -m flake8 .",
+    "format": "cd backend && python3 -m black ."
+  },
+  "keywords": [
+    "ai",
+    "trip-planner",
+    "travel",
+    "langgraph",
+    "fastapi",
+    "openai",
+    "itinerary"
+  ],
+  "author": "AI Trip Planner Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0",
+    "python": ">=3.14.0"
+  },
+  "devDependencies": {
+    "live-server": "^1.2.2",
+    "prettier": "^3.0.0",
+    "eslint": "^8.0.0"
+  },
+  "dependencies": {
+    "marked": "^9.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/ai-trip-planner.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/ai-trip-planner/issues"
+  },
+  "homepage": "https://github.com/your-username/ai-trip-planner#readme"
+}

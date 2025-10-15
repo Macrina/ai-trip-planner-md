@@ -6,6 +6,7 @@ from typing import Optional, List, Dict, Any
 import os
 import time
 import json
+import requests
 from datetime import datetime
 from pathlib import Path
 from dotenv import load_dotenv, find_dotenv
@@ -508,6 +509,51 @@ def packing_list(destination: str, duration: str, activities: Optional[List[str]
     return _llm_fallback(instruction)
 
 
+def get_city_image(destination: str, day_theme: str = "") -> str:
+    """Get a city image from Unsplash API using destination keyword."""
+    unsplash_key = os.getenv("UNSPLASH_API_KEY")
+    
+    if not unsplash_key:
+        # Fallback to picsum with destination-based seed
+        import hashlib
+        seed = int(hashlib.md5(destination.encode()).hexdigest()[:8], 16)
+        return f"https://picsum.photos/800/400?random={seed}"
+    
+    try:
+        # Search for city images
+        search_query = f"{destination} city"
+        if day_theme:
+            search_query += f" {day_theme}"
+        
+        url = "https://api.unsplash.com/search/photos"
+        headers = {"Authorization": f"Client-ID {unsplash_key}"}
+        params = {
+            "query": search_query,
+            "per_page": 1,
+            "orientation": "landscape"
+        }
+        
+        response = requests.get(url, headers=headers, params=params, timeout=5)
+        
+        if response.status_code == 200:
+            data = response.json()
+            if data.get("results") and len(data["results"]) > 0:
+                image_url = data["results"][0]["urls"]["regular"]
+                return image_url
+        
+        # Fallback if API fails
+        import hashlib
+        seed = int(hashlib.md5(destination.encode()).hexdigest()[:8], 16)
+        return f"https://picsum.photos/800/400?random={seed}"
+        
+    except Exception as e:
+        print(f"Unsplash API error: {e}")
+        # Fallback to picsum
+        import hashlib
+        seed = int(hashlib.md5(destination.encode()).hexdigest()[:8], 16)
+        return f"https://picsum.photos/800/400?random={seed}"
+
+
 class TripState(TypedDict):
     messages: Annotated[List[BaseMessage], operator.add]
     trip_request: Dict[str, Any]
@@ -713,32 +759,33 @@ def itinerary_agent(state: TripState) -> TripState:
     destination = req["destination"]
     duration = req["duration"]
     travel_style = req.get("travel_style", "standard")
+    interests = req.get("interests", "")
     user_input = (req.get("user_input") or "").strip()
     
     prompt_parts = [
         "Create a CONCISE, VISUAL {duration} itinerary for {destination} ({travel_style}).",
         "",
+        "PERSONALIZATION: Focus on interests: {interests}",
+        "",
         "CRITICAL FORMATTING RULES:",
         "1. BE CONCISE - Use short, punchy descriptions (max 10-15 words per activity)",
-        "2. IMAGES - For EACH day, add a hero image at the top: ![Day X](https://picsum.photos/800/400?random=X) (replace X with day number)",
+        "2. IMAGES - For EACH day, add a hero image at the top: ![Day X](IMAGE_URL_PLACEHOLDER_DAY_X) (will be replaced with real city images)",
+        "   CRITICAL: You MUST create an image placeholder for EVERY single day. If duration is 5 days, create IMAGE_URL_PLACEHOLDER_DAY_1, IMAGE_URL_PLACEHOLDER_DAY_2, IMAGE_URL_PLACEHOLDER_DAY_3, IMAGE_URL_PLACEHOLDER_DAY_4, IMAGE_URL_PLACEHOLDER_DAY_5",
         "3. EMOJIS - Use emojis heavily for visual appeal (🏛️ 🍝 🎨 🌃 ☕ 🚇 💶 📸 🗺️ ⭐)",
         "4. ACTION ITEMS - After each activity, add action links:",
-        "   - 🗺️ [Get Directions](https://maps.google.com/?q=Location+Name)",
-        "   - 🎫 [Book Tickets](https://www.getyourguide.com/s/?q=Attraction+Name)",
-        "   - 📸 [Photos](https://unsplash.com/s/photos/location-name)",
+        f"   - 🗺️ [Get Directions](https://maps.google.com/?q={destination}+Location+Name)",
+        f"   - 🎫 [Book Tickets](https://www.getyourguide.com/s/?q={destination}+Attraction+Name)",
+        f"   - 📸 [Photos](https://unsplash.com/s/photos/{destination}+location-name)",
         "   IMPORTANT: Replace 'Location+Name' and 'Attraction+Name' with ACTUAL place names (e.g., 'Eiffel+Tower', 'Colosseum')",
         "",
         "STRUCTURE:",
         "# 🌍 {destination} in {duration}",
         "",
-        "## ✨ Quick Overview",
-        "[1-2 sentences max. Include best known for, vibe, estimated daily budget]",
+        "IMPORTANT: Create EXACTLY the number of days specified in the duration. If duration is '5 days', create Day 1, Day 2, Day 3, Day 4, Day 5.",
         "",
-        "---",
+        "### Day 1: [Short Theme - e.g., 'Historic Heart']",
         "",
-        "### 🌅 Day 1: [Short Theme - e.g., 'Historic Heart']",
-        "",
-        "![Day 1](https://picsum.photos/800/400?random=1)",
+        "![Day 1](IMAGE_URL_PLACEHOLDER_DAY_1)",
         "",
         "**Morning** ☀️",
         "- 🏛️ **[Attraction]** - Brief 1-line description",
@@ -757,7 +804,61 @@ def itinerary_agent(state: TripState) -> TripState:
         "",
         "---",
         "",
-        "[Repeat for other days - keep each day under 200 words]",
+        "### Day 2: [Short Theme - e.g., 'Cultural Gems']",
+        "",
+        "![Day 2](IMAGE_URL_PLACEHOLDER_DAY_2)",
+        "",
+        "**Morning** ☀️",
+        "- 🏛️ **[Attraction]** - Brief 1-line description",
+        "  - 💶 Cost | ⏱️ 2 hours",
+        "  - 🗺️ [Directions](https://maps.google.com/?q=Attraction) | 🎫 [Tickets](https://getyourguide.com)",
+        "",
+        "**Afternoon** 🌤️",
+        "- 🍝 **[Restaurant/Activity]** - Brief description",
+        "  - 💶 Cost | ⏱️ Duration",
+        "  - 🗺️ [Directions](https://maps.google.com/?q=Restaurant+Name) | 📸 [Photos](https://unsplash.com/s/photos/restaurant-name)",
+        "",
+        "**Evening** 🌆",
+        "- 🌆 **[Evening Activity]** - Brief description",
+        "  - 💶 Cost | ⏱️ Duration",
+        "  - 🗺️ [Directions](https://maps.google.com/?q=Activity+Name) | 🎫 [Book](https://www.getyourguide.com/s/?q=Activity)",
+        "",
+        "---",
+        "",
+        "### Day 3: [Short Theme - e.g., 'Local Flavors']",
+        "",
+        "![Day 3](IMAGE_URL_PLACEHOLDER_DAY_3)",
+        "",
+        "**Morning** ☀️",
+        "- 🏛️ **[Attraction]** - Brief 1-line description",
+        "  - 💶 Cost | ⏱️ 2 hours",
+        "  - 🗺️ [Directions](https://maps.google.com/?q=Attraction) | 🎫 [Tickets](https://getyourguide.com)",
+        "",
+        "**Afternoon** 🌤️",
+        "- 🍝 **[Restaurant/Activity]** - Brief description",
+        "  - 💶 Cost | ⏱️ Duration",
+        "  - 🗺️ [Directions](https://maps.google.com/?q=Restaurant+Name) | 📸 [Photos](https://unsplash.com/s/photos/restaurant-name)",
+        "",
+        "**Evening** 🌆",
+        "- 🌆 **[Evening Activity]** - Brief description",
+        "  - 💶 Cost | ⏱️ Duration",
+        "  - 🗺️ [Directions](https://maps.google.com/?q=Activity+Name) | 🎫 [Book](https://www.getyourguide.com/s/?q=Activity)",
+        "",
+        "---",
+        "",
+        "CRITICAL: Create ALL days from Day 1 to Day X where X is the duration number. Each day should have Morning, Afternoon, and Evening sections.",
+        "IMPORTANT: Each day MUST have its own image placed immediately after the day header. Follow this exact structure:",
+        "### Day X: [Theme]",
+        "",
+        "![Day X](IMAGE_URL_PLACEHOLDER_DAY_X)",
+        "",
+        "**Morning** ☀️",
+        "...",
+        "**Afternoon** 🌤️",
+        "...",
+        "**Evening** 🌆",
+        "...",
+        "---",
         "",
         "---",
         "",
@@ -793,6 +894,7 @@ def itinerary_agent(state: TripState) -> TripState:
         "duration": duration,
         "destination": destination,
         "travel_style": travel_style,
+        "interests": interests or "general travel",
         "research": (state.get("research") or "")[:400],
         "budget": (state.get("budget") or "")[:400],
         "local": (state.get("local") or "")[:400],
@@ -815,7 +917,41 @@ def itinerary_agent(state: TripState) -> TripState:
         with using_prompt_template(template=prompt_t, variables=vars_, version="v1"):
             res = llm.invoke([SystemMessage(content=prompt_t.format(**vars_))])
     
-    return {"messages": [SystemMessage(content=res.content)], "final": res.content}
+    # Process the content to replace image placeholders with real city images
+    content = res.content
+    
+    # Extract duration number for generating day images
+    duration_num = 1
+    try:
+        duration_str = duration.lower().replace("days", "").replace("day", "").strip()
+        duration_num = int(duration_str) if duration_str.isdigit() else 1
+    except:
+        duration_num = 1
+    
+    # Replace image placeholders with actual city images
+    for day in range(1, duration_num + 1):
+        # Get different images for each day with day-specific themes
+        day_themes = ["morning", "afternoon", "evening", "landmarks", "culture", "food", "nature", "architecture"]
+        theme = day_themes[(day - 1) % len(day_themes)]
+        
+        image_url = get_city_image(destination, theme)
+        placeholder = f"IMAGE_URL_PLACEHOLDER_DAY_{day}"
+        
+        # Check if placeholder exists in content
+        if placeholder in content:
+            content = content.replace(placeholder, image_url)
+            print(f"✅ Replaced {placeholder} with {destination} {theme} image")
+        else:
+            print(f"⚠️ Placeholder {placeholder} not found in content")
+            # Add the image manually if placeholder is missing
+            day_header = f"### Day {day}:"
+            if day_header in content:
+                # Insert image after the day header
+                image_markdown = f"\n\n![Day {day}]({image_url})\n"
+                content = content.replace(day_header, day_header + image_markdown)
+                print(f"✅ Added {destination} {theme} image for Day {day}")
+    
+    return {"messages": [SystemMessage(content=content)], "final": content}
 
 
 def build_graph():
@@ -858,6 +994,62 @@ def serve_frontend():
     if os.path.exists(path):
         return FileResponse(path)
     return {"message": "frontend/index.html not found"}
+
+
+@app.get("/cities.json")
+def serve_cities():
+    here = os.path.dirname(__file__)
+    path = os.path.join(here, "..", "frontend", "cities.json")
+    if os.path.exists(path):
+        return FileResponse(path)
+    return {"error": "cities.json not found"}
+
+
+@app.get("/api/cities")
+async def search_cities(q: str = ""):
+    """
+    Free cities autocomplete API using REST Countries and Geonames
+    """
+    if len(q) < 2:
+        return {"cities": []}
+    
+    try:
+        # Use a free cities API - Geonames (free tier available)
+        # For now, let's use a simple fallback with major cities
+        major_cities = [
+            {"name": "Paris", "country": "France", "region": "Europe"},
+            {"name": "London", "country": "United Kingdom", "region": "Europe"},
+            {"name": "Rome", "country": "Italy", "region": "Europe"},
+            {"name": "Barcelona", "country": "Spain", "region": "Europe"},
+            {"name": "Amsterdam", "country": "Netherlands", "region": "Europe"},
+            {"name": "Berlin", "country": "Germany", "region": "Europe"},
+            {"name": "Prague", "country": "Czech Republic", "region": "Europe"},
+            {"name": "Vienna", "country": "Austria", "region": "Europe"},
+            {"name": "Tokyo", "country": "Japan", "region": "Asia"},
+            {"name": "Seoul", "country": "South Korea", "region": "Asia"},
+            {"name": "Bangkok", "country": "Thailand", "region": "Asia"},
+            {"name": "Singapore", "country": "Singapore", "region": "Asia"},
+            {"name": "Hong Kong", "country": "Hong Kong", "region": "Asia"},
+            {"name": "Dubai", "country": "UAE", "region": "Middle East"},
+            {"name": "New York", "country": "United States", "region": "North America"},
+            {"name": "Los Angeles", "country": "United States", "region": "North America"},
+            {"name": "San Francisco", "country": "United States", "region": "North America"},
+            {"name": "Toronto", "country": "Canada", "region": "North America"},
+            {"name": "Sydney", "country": "Australia", "region": "Oceania"},
+            {"name": "Melbourne", "country": "Australia", "region": "Oceania"},
+            {"name": "Auckland", "country": "New Zealand", "region": "Oceania"},
+        ]
+        
+        # Filter cities based on query
+        filtered_cities = [
+            city for city in major_cities
+            if q.lower() in city["name"].lower() or q.lower() in city["country"].lower()
+        ]
+        
+        return {"cities": filtered_cities[:8]}  # Limit to 8 results
+        
+    except Exception as e:
+        return {"cities": [], "error": str(e)}
 
 
 @app.get("/health")

@@ -152,6 +152,16 @@ Students have successfully adapted this codebase for:
 
 3) Install dependencies
 ```bash
+# Install Node.js and nvm (Node Version Manager)
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+nvm install --lts
+nvm use --lts
+
+# Install project dependencies
+npm install
+npm run install-deps  # Installs Python dependencies
+
+# Alternative: Direct Python installation
 cd backend
 uv pip install -r requirements.txt   # faster, deterministic installs
 # If uv is not installed: curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -162,8 +172,14 @@ uv pip install -r requirements.txt   # faster, deterministic installs
 ```bash
 # make sure you are back in the root directory of ai-trip-planner
 cd ..
+
+# Option 1: Using npm scripts (recommended)
+npm start                       # starts backend on 8000; serves minimal UI at '/'
+
+# Option 2: Using start.sh script
 ./start.sh                      # starts backend on 8000; serves minimal UI at '/'
-# or
+
+# Option 3: Direct Python command
 cd backend && uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
@@ -227,6 +243,47 @@ Tools can call real web search APIs (Tavily or SerpAPI) for up-to-date travel in
 - **Learning**: Demonstrates graceful degradation and multi-tier fallback patterns
 
 Recommended: Tavily (free tier: 1000 searches/month) - https://tavily.com
+
+### City Images: Real Destination Photos
+
+The itinerary agent can fetch real city images from Unsplash for each day of your trip:
+
+- **Enable**: Add `UNSPLASH_API_KEY` to your `.env` file
+- **Benefits**: Beautiful, relevant city photos for each day of your itinerary
+- **Fallback**: Without API key, uses destination-based random images from Picsum
+- **Learning**: Demonstrates API integration with graceful fallback patterns
+
+Get your free Unsplash API key: https://unsplash.com/developers
+
+## Development Tools
+
+### Node.js Setup
+This project now includes Node.js tooling for enhanced development:
+
+- **nvm**: Node Version Manager for switching between Node.js versions
+- **npm**: Package manager for JavaScript dependencies
+- **live-server**: Local development server for frontend
+- **prettier**: Code formatter for consistent styling
+
+### Available npm Scripts
+```bash
+npm start          # Start the FastAPI backend server
+npm run dev        # Start development server with auto-reload
+npm run setup      # Initial project setup (installs all dependencies)
+npm run install-deps # Install Python dependencies only
+npm test           # Run Python tests
+npm run lint       # Run Python linting
+npm run format     # Format Python code with black
+```
+
+### Development Workflow
+```bash
+# Start backend
+npm start
+
+# In another terminal, start frontend development server
+live-server frontend --port=3000 --open=/index.html
+```
 
 ## Next Steps
 
