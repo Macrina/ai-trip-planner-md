@@ -9,105 +9,27 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body class="bg-neutral-50 text-neutral-900 antialiased font-[Inter]">
-  <!-- Nav -->
-  <header class="border-b border-neutral-200 bg-white/80 backdrop-blur">
-    <div class="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
-      <div class="flex items-center gap-2">
-        <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-tr from-indigo-600 via-violet-600 to-fuchsia-600 text-white">
-          <i data-lucide="compass" class="h-5 w-5"></i>
-        </span>
-        <span class="text-lg font-semibold tracking-tight">Trip Planner</span>
-      </div>
-    </div>
-  </header>
-
+<body class="bg-white text-neutral-900 antialiased font-[Inter]">
   <!-- Hero -->
   <section class="mx-auto max-w-7xl px-6 pt-10 pb-8">
-    <div class="relative overflow-hidden rounded-2xl border border-neutral-200 bg-gradient-to-tr from-indigo-600 via-violet-600 to-fuchsia-600">
-      <div class="absolute inset-0 opacity-20">
-        <img alt="Mountain landscape" class="h-full w-full object-cover"
-             src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=80&w=2000&auto=format&fit=crop" />
-      </div>
-      <div class="relative grid gap-6 p-8 md:grid-cols-3 md:p-12">
-        <div class="md:col-span-2">
-          <h1 class="text-white text-4xl md:text-5xl font-semibold tracking-tight leading-tight">
+    <div class="relative overflow-hidden bg-white">
+      <div class="relative pt-4 px-8 pb-12 md:pt-6 md:px-12 md:pb-16">
+        <div>
+          <div class="flex items-center gap-2 mb-6">
+            <span class="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-tr from-indigo-600 via-violet-600 to-fuchsia-600 text-white">
+              <i data-lucide="compass" class="h-6 w-6"></i>
+            </span>
+            <span class="text-xl font-bold tracking-tight text-black">Trip Planner</span>
+          </div>
+          <h1 class="text-black text-4xl md:text-5xl font-bold tracking-tight leading-tight">
             Plan Your Perfect Trip
           </h1>
-          <p class="mt-3 text-indigo-100/90 text-base md:text-lg">
+          <p class="mt-3 text-black text-base md:text-lg">
             Discover destinations, craft smart budgets, and get a personalized day-by-day itinerary in seconds.
           </p>
-          <div class="mt-6 flex flex-wrap items-center gap-3">
-            <div class="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-2 text-white text-sm">
-              <i data-lucide="clock-8" class="h-4 w-4"></i>
-              Plan faster
-            </div>
-            <div class="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-2 text-white text-sm">
-              <i data-lucide="map" class="h-4 w-4"></i>
-              Smarter routes
-            </div>
-            <div class="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-2 text-white text-sm">
-              <i data-lucide="sparkles" class="h-4 w-4"></i>
-              Local gems
-            </div>
-          </div>
-        </div>
-        <div class="hidden md:block">
-          <div class="relative h-full w-full rounded-xl bg-white/10 p-4 ring-1 ring-white/20 backdrop-blur">
-            <img alt="City minimal render" class="h-full w-full rounded-lg object-cover"
-                 src="https://images.unsplash.com/photo-1521295121783-8a321d551ad2?q=80&w=1600&auto=format&fit=crop" />
-            <div class="absolute bottom-4 left-4 flex items-center gap-2 rounded-full bg-black/30 px-3 py-1.5 text-white text-xs">
-              <i data-lucide="camera" class="h-3.5 w-3.5"></i> Inspiration
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Feature cards -->
-    <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <div class="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
-        <div class="flex items-center gap-3">
-          <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-neutral-100 text-neutral-700">
-            <i data-lucide="search" class="h-5 w-5"></i>
-          </span>
-          <div>
-            <div class="font-semibold tracking-tight">Research</div>
-            <p class="text-sm text-neutral-600">Weather, highlights, neighborhoods.</p>
-          </div>
-        </div>
-      </div>
-      <div class="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
-        <div class="flex items-center gap-3">
-          <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-neutral-100 text-neutral-700">
-            <i data-lucide="calendar-clock" class="h-5 w-5"></i>
-          </span>
-          <div>
-            <div class="font-semibold tracking-tight">Itineraries</div>
-            <p class="text-sm text-neutral-600">Day-by-day schedules, in minutes.</p>
-          </div>
-        </div>
-      </div>
-      <div class="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
-        <div class="flex items-center gap-3">
-          <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-neutral-100 text-neutral-700">
-            <i data-lucide="wallet" class="h-5 w-5"></i>
-          </span>
-          <div>
-            <div class="font-semibold tracking-tight">Budget</div>
-            <p class="text-sm text-neutral-600">Smart spend suggestions.</p>
-          </div>
-        </div>
-      </div>
-      <div class="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
-        <div class="flex items-center gap-3">
-          <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-neutral-100 text-neutral-700">
-            <i data-lucide="map-pin" class="h-5 w-5"></i>
-          </span>
-          <div>
-            <div class="font-semibold tracking-tight">Local</div>
-            <p class="text-sm text-neutral-600">Authentic finds & hidden gems.</p>
-          </div>
+          <p class="mt-8 text-base md:text-lg text-neutral-600">
+            Research • Itineraries • Budget • Local experiences
+          </p>
         </div>
       </div>
     </div>
@@ -156,21 +78,21 @@
               <i data-lucide="chevron-down" class="h-4.5 w-4.5 text-neutral-500"></i>
             </button>
             <div id="budgetMenu" class="absolute z-20 mt-2 hidden w-full overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-lg">
-              <button data-value="budget" class="flex w-full items-center justify-between px-3.5 py-2.5 text-sm hover:bg-neutral-50">
+              <button type="button" data-value="budget" class="flex w-full items-center justify-between px-3.5 py-2.5 text-sm hover:bg-neutral-50">
                 <span class="flex items-center gap-2">
                   <i data-lucide="piggy-bank" class="h-4 w-4 text-neutral-500"></i>
                   Budget
                 </span>
                 <span class="text-neutral-500 text-xs">Save more</span>
               </button>
-              <button data-value="moderate" class="flex w-full items-center justify-between px-3.5 py-2.5 text-sm hover:bg-neutral-50">
+              <button type="button" data-value="moderate" class="flex w-full items-center justify-between px-3.5 py-2.5 text-sm hover:bg-neutral-50">
                 <span class="flex items-center gap-2">
                   <i data-lucide="wallet" class="h-4 w-4 text-neutral-500"></i>
                   Moderate
                 </span>
                 <span class="text-neutral-500 text-xs">Balanced</span>
               </button>
-              <button data-value="luxury" class="flex w-full items-center justify-between px-3.5 py-2.5 text-sm hover:bg-neutral-50">
+              <button type="button" data-value="luxury" class="flex w-full items-center justify-between px-3.5 py-2.5 text-sm hover:bg-neutral-50">
                 <span class="flex items-center gap-2">
                   <i data-lucide="gem" class="h-4 w-4 text-neutral-500"></i>
                   Luxury
@@ -205,7 +127,7 @@
 
       <!-- Output -->
       <section class="lg:col-span-2 space-y-6">
-        <div id="placeholderCard" class="rounded-xl border border-neutral-200 bg-white p-8 text-center shadow-sm">
+        <div id="placeholderCard" class="rounded-xl border border-neutral-200 bg-neutral-50 p-8 text-center shadow-sm">
           <h3 class="text-xl md:text-2xl font-semibold tracking-tight">Fill out the form to get your personalized trip plan</h3>
           <p class="mt-2 text-neutral-600">Enter your details on the left—your itinerary will appear here.</p>
           <div class="mt-6 grid gap-3 sm:grid-cols-3">
@@ -330,19 +252,269 @@
         const data = await resp.json();
         const md = (data && data.result) ? data.result : 'No result';
 
-        const content = (window.marked && window.marked.parse) ? window.marked.parse(md) : `<pre class="whitespace-pre-wrap">${md}</pre>`;
+        let content = (window.marked && window.marked.parse) ? window.marked.parse(md) : `<pre class="whitespace-pre-wrap">${md}</pre>`;
+        
+        // Parse content to extract days and other sections
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = content;
+        const days = [];
+        let currentDay = null;
+        let beforeDays = [];
+        let afterDays = [];
+        let foundDays = false;
+        let daysEnded = false;
+        
+        Array.from(tempDiv.children).forEach(child => {
+          // Check if it's a day header (h3 with "Day X:")
+          if (child.tagName === 'H3' && /Day\s+\d+/i.test(child.textContent)) {
+            if (currentDay) days.push(currentDay);
+            currentDay = {
+              title: child.textContent.trim(),
+              content: []
+            };
+            foundDays = true;
+          } else if (currentDay && !daysEnded) {
+            // Check if we've moved past the days section (h2 or hr after days)
+            if (child.tagName === 'H2' && foundDays) {
+              days.push(currentDay);
+              currentDay = null;
+              daysEnded = true;
+              afterDays.push(child.outerHTML);
+            } else if (child.tagName === 'HR' && foundDays && days.length > 0) {
+              // End of current day
+            } else {
+              currentDay.content.push(child.outerHTML);
+            }
+          } else if (!foundDays) {
+            beforeDays.push(child.outerHTML);
+          } else if (daysEnded) {
+            afterDays.push(child.outerHTML);
+          }
+        });
+        if (currentDay && !daysEnded) days.push(currentDay);
+        
+        // Build tabs HTML
+        let tabsHTML = '';
+        let tabPanelsHTML = '';
+        if (days.length > 0) {
+          tabsHTML = days.map((day, idx) => `
+            <button class="tab-btn px-6 py-3 font-medium transition-all ${idx === 0 ? 'tab-active' : 'text-neutral-600 hover:text-neutral-900'}" data-tab="${idx}">
+              ${day.title}
+            </button>
+          `).join('');
+          
+          tabPanelsHTML = days.map((day, idx) => `
+            <div class="tab-panel ${idx === 0 ? '' : 'hidden'}" data-panel="${idx}">
+              ${day.content.join('')}
+            </div>
+          `).join('');
+        }
+        
+        // Combine content
+        const finalContent = days.length > 0 
+          ? beforeDays.join('') + '<div class="tabs-container">' + tabPanelsHTML + '</div>' + afterDays.join('')
+          : content;
+        
         results.innerHTML = `
-          <div class="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">
-            <div class="mb-3 flex items-center justify-between">
-              <h3 class="text-xl font-semibold tracking-tight">Your Itinerary</h3>
-              <button id="printBtn" class="inline-flex items-center gap-2 rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-sm hover:bg-neutral-50">
+          <div class="rounded-xl border border-neutral-200 bg-neutral-50 p-8 shadow-sm">
+            <div class="mb-6 flex items-center justify-between border-b border-neutral-200 pb-4">
+              <h3 class="text-2xl font-bold tracking-tight text-neutral-900">Your Personalized Itinerary</h3>
+              <button id="printBtn" class="inline-flex items-center gap-2 rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-medium hover:bg-neutral-50 transition">
                 <i data-lucide="printer" class="h-4 w-4"></i> Print / PDF
               </button>
             </div>
-            <div class="prose max-w-none">${content}</div>
+            <style>
+              .itinerary-content h1 { 
+                font-size: 2.25rem; 
+                font-weight: 700; 
+                margin-bottom: 1.5rem; 
+                color: #0f172a;
+                border-bottom: 3px solid #6366f1;
+                padding-bottom: 0.75rem;
+                text-align: center;
+              }
+              .itinerary-content h2 { 
+                font-size: 1.75rem; 
+                font-weight: 600; 
+                margin-top: 2.5rem; 
+                margin-bottom: 1.25rem; 
+                color: #1e293b;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                padding: 1rem;
+                background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 100%);
+                border-radius: 0.5rem;
+              }
+              .itinerary-content h3 { 
+                font-size: 1.375rem; 
+                font-weight: 600; 
+                margin-top: 2rem; 
+                margin-bottom: 1rem; 
+                color: #334155;
+                padding: 0.875rem 1.25rem;
+                background: linear-gradient(to right, #f1f5f9, transparent);
+                border-left: 5px solid #6366f1;
+                border-radius: 0.375rem;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+              }
+              .itinerary-content img {
+                width: 100%;
+                max-width: 800px;
+                height: 300px;
+                object-fit: cover;
+                border-radius: 0.75rem;
+                margin: 1.5rem auto;
+                display: block;
+                box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+                transition: transform 0.3s ease;
+              }
+              .itinerary-content img:hover {
+                transform: scale(1.02);
+              }
+              .itinerary-content p { 
+                margin-bottom: 1rem; 
+                line-height: 1.75;
+                color: #475569;
+                font-size: 1.05rem;
+              }
+              .itinerary-content strong { 
+                font-weight: 600; 
+                color: #1e293b;
+                font-size: 1.1rem;
+              }
+              .itinerary-content ul { 
+                margin: 1.25rem 0; 
+                padding-left: 0;
+                list-style: none;
+              }
+              .itinerary-content li { 
+                margin-bottom: 1rem; 
+                padding: 0.75rem 1rem 0.75rem 2rem;
+                position: relative;
+                line-height: 1.7;
+                color: #475569;
+                background: #fafafa;
+                border-radius: 0.375rem;
+                transition: background 0.2s;
+              }
+              .itinerary-content li:hover {
+                background: #f1f5f9;
+              }
+              .itinerary-content li:before {
+                content: none;
+              }
+              .itinerary-content a {
+                color: #6366f1;
+                text-decoration: none;
+                font-weight: 500;
+                padding: 0.25rem 0.5rem;
+                border-radius: 0.25rem;
+                transition: all 0.2s;
+                display: inline-flex;
+                align-items: center;
+                gap: 0.25rem;
+              }
+              .itinerary-content a:hover {
+                background: #eef2ff;
+                color: #4f46e5;
+                transform: translateY(-1px);
+              }
+              .itinerary-content em {
+                font-style: italic;
+                color: #64748b;
+              }
+              .itinerary-content code {
+                background: #f1f5f9;
+                padding: 0.25rem 0.5rem;
+                border-radius: 0.25rem;
+                font-size: 0.9em;
+                color: #6366f1;
+                font-weight: 500;
+              }
+              .itinerary-content hr {
+                border: none;
+                border-top: 2px dashed #e2e8f0;
+                margin: 2.5rem 0;
+              }
+              .itinerary-content blockquote {
+                border-left: 4px solid #fbbf24;
+                background: #fffbeb;
+                padding: 1rem 1.5rem;
+                margin: 1.5rem 0;
+                border-radius: 0.5rem;
+              }
+              .tab-btn {
+                border-bottom: 3px solid transparent;
+                white-space: nowrap;
+              }
+              .tab-active {
+                color: #6366f1;
+                border-bottom-color: #6366f1;
+              }
+              .tabs-container {
+                margin-top: 1rem;
+              }
+              .day-tabs {
+                display: flex;
+                gap: 0.5rem;
+                border-bottom: 2px solid #e5e7eb;
+                margin-bottom: 1.5rem;
+                overflow-x: auto;
+              }
+            </style>
+            <div class="itinerary-content prose prose-slate max-w-none">
+              ${days.length > 0 ? beforeDays.join('') : ''}
+              ${days.length > 0 ? `<div class="day-tabs">${tabsHTML}</div>` : ''}
+              ${days.length > 0 ? `<div class="tabs-container">${tabPanelsHTML}</div>` : ''}
+              ${days.length > 0 ? afterDays.join('') : content}
+            </div>
           </div>
         `;
         renderIcons();
+        
+        // Make all links open in new tab (backup for any links not caught by marked.js)
+        const ensureLinksOpenInNewTab = () => {
+          document.querySelectorAll('.itinerary-content a').forEach(link => {
+            if (!link.hasAttribute('target')) {
+              link.setAttribute('target', '_blank');
+              link.setAttribute('rel', 'noopener noreferrer');
+            }
+          });
+        };
+        
+        // Run immediately and after a delay to catch any dynamically added links
+        ensureLinksOpenInNewTab();
+        setTimeout(ensureLinksOpenInNewTab, 100);
+        
+        // Tab switching logic
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabPanels = document.querySelectorAll('.tab-panel');
+        tabBtns.forEach(btn => {
+          btn.addEventListener('click', () => {
+            const tabIndex = btn.getAttribute('data-tab');
+            
+            // Remove active from all tabs
+            tabBtns.forEach(b => b.classList.remove('tab-active', 'text-indigo-600'));
+            tabBtns.forEach(b => b.classList.add('text-neutral-600'));
+            
+            // Add active to clicked tab
+            btn.classList.add('tab-active');
+            btn.classList.remove('text-neutral-600');
+            
+            // Hide all panels
+            tabPanels.forEach(p => p.classList.add('hidden'));
+            
+            // Show selected panel
+            const selectedPanel = document.querySelector(`[data-panel="${tabIndex}"]`);
+            if (selectedPanel) {
+              selectedPanel.classList.remove('hidden');
+              // Ensure links in the newly shown panel open in new tab
+              ensureLinksOpenInNewTab();
+            }
+          });
+        });
+        
         const printBtn = document.getElementById('printBtn');
         printBtn?.addEventListener('click', () => window.print());
       } catch (err) {
