@@ -7,17 +7,19 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="/static/styles.css" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body class="bg-white text-neutral-900 antialiased font-[Roboto] min-h-screen flex flex-col">
   <!-- Header Logo -->
-  <header class="mx-auto max-w-7xl px-6 pt-6 pb-8">
-      <div class="flex items-center gap-2">
+  <header class="w-full">
+    <div class="mx-auto max-w-7xl px-6 pt-6 pb-8">
+      <div class="flex items-center gap-2 justify-start">
       <span class="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-tr from-indigo-600 via-violet-600 to-fuchsia-600 text-white">
         <i data-lucide="compass" class="h-6 w-6"></i>
         </span>
       <span class="text-xl font-bold tracking-tight text-black">Trip Planner</span>
+      </div>
     </div>
   </header>
 
@@ -157,10 +159,10 @@
                         placeholder="e.g., food, culture, museums, nature"
                         class="flex-1 min-w-[200px] text-slate-900 placeholder-slate-400 outline-none bg-transparent text-lg font-normal" 
                       />
-                    </div>
+            </div>
                   </div>
                   <p class="text-xs text-slate-500 mt-2">Press space, enter, or comma to add interests</p>
-                </div>
+          </div>
 
                 <!-- Submit Button -->
                 <div class="lg:col-span-1">
@@ -170,11 +172,11 @@
                     type="submit"
                     class="w-full h-16 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-2xl shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 transition-all duration-300 transform hover:-translate-y-1 focus:outline-none focus:ring-4 focus:ring-blue-500/20 flex items-center justify-center gap-3 text-lg"
                   >
-                    <i data-lucide="route" class="h-5 w-5"></i>
+              <i data-lucide="route" class="h-5 w-5"></i>
                     <span>Plan My Trip</span>
-                  </button>
+            </button>
                 </div>
-              </div>
+          </div>
         </form>
           </div>
       </section>
@@ -308,7 +310,7 @@
       const durationNum = Math.max(1, Math.min(30, parseInt(document.getElementById('duration').value || '0', 10)));
       const duration = isFinite(durationNum) ? `${durationNum} days` : '3 days';
       const budget = document.getElementById('budgetValue').value || 'moderate';
-      const interests = interestsList.join(', ');
+      const interests = window.interestsList.join(', ');
 
       if (!destination || !durationNum) {
         alert('Please enter a destination and duration.');
@@ -345,11 +347,34 @@
         const data = await resp.json();
         const md = (data && data.result) ? data.result : 'No result';
 
+        // Configure marked.js to render links properly
+        if (window.marked) {
+          window.marked.setOptions({
+            breaks: true,
+            gfm: true,
+            renderer: new window.marked.Renderer()
+          });
+          
+          // Custom link renderer to ensure proper button styling
+          window.marked.Renderer.prototype.link = function(href, title, text) {
+            const titleAttr = title ? ` title="${title}"` : '';
+            return `<a href="${href}" target="_blank" rel="noopener noreferrer"${titleAttr}>${text}</a>`;
+          };
+        }
+        
         let content = (window.marked && window.marked.parse) ? window.marked.parse(md) : `<pre class="whitespace-pre-wrap">${md}</pre>`;
         
         // Parse content to extract days and other sections
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = content;
+        
+        // Remove background styling from "Welcome to" headings
+        const welcomeHeadings = tempDiv.querySelectorAll('h2');
+        welcomeHeadings.forEach(heading => {
+          if (heading.textContent.includes('Welcome to')) {
+            heading.classList.add('welcome-heading');
+          }
+        });
         const days = [];
         let currentDay = null;
         let beforeDays = [];
@@ -613,6 +638,14 @@
                 font-family: 'Roboto', sans-serif;
                 letter-spacing: -0.01em;
               }
+              /* Remove background styling for "Welcome to" headings */
+              .itinerary-content .welcome-heading {
+                background: none !important;
+                padding: 0 !important;
+                border-radius: 0 !important;
+                margin-top: 2rem !important;
+                margin-bottom: 1rem !important;
+              }
               .itinerary-content h3 { 
                 font-size: 1.625rem; 
                 font-weight: 700; 
@@ -641,11 +674,12 @@
               }
               .itinerary-content img {
                 width: 100%;
-                max-width: 800px;
+                max-width: 100%;
                 height: 300px;
                 object-fit: cover;
                 border-radius: 0.75rem;
-                margin: 1.5rem auto;
+                margin: 0;
+                padding: 0;
                 display: block;
                 box-shadow: 0 10px 25px rgba(0,0,0,0.15);
                 transition: transform 0.3s ease;
@@ -663,65 +697,143 @@
                 letter-spacing: 0.01em;
               }
               .itinerary-content strong { 
-                font-weight: 600; 
+                font-weight: 700; 
                 color: #1e293b;
-                font-size: 1.125rem;
+                font-size: 1.3rem;
                 font-family: 'Roboto', sans-serif;
+                display: block;
+                margin-bottom: 0.5rem;
+                margin-top: 0;
+                padding: 0;
+                background: none;
+                border-radius: 0;
+                border-left: none;
+                box-shadow: none;
+                position: relative;
+                overflow: visible;
+                line-height: 1.3;
+                letter-spacing: -0.01em;
               }
               .itinerary-content ul { 
-                margin: 2rem 0; 
+                margin: 1.5rem 0; 
                 padding-left: 0;
                 list-style: none;
               }
               .itinerary-content li { 
-                margin: 1rem 0; 
-                padding: 1rem 1.25rem 1rem 2.5rem;
+                margin: 1.25rem 0; 
+                padding: 1.75rem 2rem;
                 position: relative;
-                line-height: 1.8;
+                line-height: 1.6;
                 color: #475569;
-                background: #f8fafc;
-                border-radius: 0.75rem;
-                border-left: 4px solid #e2e8f0;
-                transition: all 0.3s ease;
+                background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+                border-radius: 1rem;
+                border: 1px solid #e2e8f0;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
                 font-family: 'Roboto', sans-serif;
                 font-size: 1.05rem;
+                backdrop-filter: blur(8px);
               }
               .itinerary-content li:hover {
-                background: #f1f5f9;
+                background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+                border-color: #cbd5e1;
+                transform: translateY(-2px);
+                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
               }
               .itinerary-content li:before {
                 content: none;
               }
               .itinerary-content a {
-                color: #475569;
+                color: #374151;
                 text-decoration: none;
-                font-weight: 500;
+                font-weight: 600;
                 padding: 0.5rem 1rem;
                 border-radius: 0.5rem;
                 transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
                 display: inline-flex;
                 align-items: center;
-                gap: 0.5rem;
-                background: #f8fafc;
+                gap: 0.375rem;
+                background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
                 border: 1px solid #e2e8f0;
                 font-size: 0.875rem;
                 margin: 0.25rem 0.5rem 0.25rem 0;
                 box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+                position: relative;
+                overflow: visible;
+                font-family: 'Roboto', sans-serif;
+                letter-spacing: normal;
+                line-height: 1.4;
+                cursor: pointer;
+                white-space: nowrap;
               }
               .itinerary-content a:hover {
-                background: #e2e8f0;
+                background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
                 border-color: #cbd5e1;
                 transform: translateY(-1px);
                 box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-                color: #374151;
+                color: #1e293b;
+                text-decoration: none;
               }
               .itinerary-content a:active {
                 transform: translateY(0);
                 box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+                color: #374151;
+              }
+              
+              /* Specific styling for different action types */
+              .itinerary-content a[href*="maps.google.com"] {
+                background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+                color: white;
+                border-color: #1d4ed8;
+              }
+              .itinerary-content a[href*="maps.google.com"]:hover {
+                background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+                color: white;
+              }
+              
+              .itinerary-content a[href*="getyourguide.com"] {
+                background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                color: white;
+                border-color: #059669;
+              }
+              .itinerary-content a[href*="getyourguide.com"]:hover {
+                background: linear-gradient(135deg, #059669 0%, #047857 100%);
+                color: white;
+              }
+              
+              .itinerary-content a[href*="unsplash.com"] {
+                background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+                color: white;
+                border-color: #7c3aed;
+              }
+              .itinerary-content a[href*="unsplash.com"]:hover {
+                background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+                color: white;
               }
               .itinerary-content em {
                 font-style: italic;
                 color: #64748b;
+              }
+              /* Special styling for cost and duration information */
+              .itinerary-content li:has(em) {
+                padding-top: 1.25rem;
+                padding-bottom: 1.5rem;
+              }
+              .itinerary-content li em {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.5rem;
+                background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+                padding: 0.625rem 1.25rem;
+                border-radius: 0.75rem;
+                border: 1px solid #cbd5e1;
+                font-style: normal;
+                font-weight: 600;
+                color: #475569;
+                font-size: 0.95rem;
+                margin: 0.5rem 0 1rem 0;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+                line-height: 1.4;
               }
               .itinerary-content code {
                 background: #f1f5f9;
@@ -1671,24 +1783,24 @@
            // Interests tag system
            const interestsInput = document.getElementById('interests');
            const interestsTags = document.getElementById('interestsTags');
-           let interestsList = [];
+           window.interestsList = [];
 
            function addInterest(interest) {
              const trimmedInterest = interest.trim().toLowerCase();
-             if (trimmedInterest && !interestsList.includes(trimmedInterest)) {
-               interestsList.push(trimmedInterest);
+             if (trimmedInterest && !window.interestsList.includes(trimmedInterest)) {
+               window.interestsList.push(trimmedInterest);
                renderInterestTags();
                interestsInput.value = '';
              }
            }
 
            function removeInterest(interest) {
-             interestsList = interestsList.filter(i => i !== interest);
+             window.interestsList = window.interestsList.filter(i => i !== interest);
              renderInterestTags();
            }
 
           function renderInterestTags() {
-            interestsTags.innerHTML = interestsList.map(interest => `
+            interestsTags.innerHTML = window.interestsList.map(interest => `
               <span class="inline-flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-pink-100 to-purple-100 text-pink-800 text-sm font-medium rounded-full border border-pink-200 shadow-sm hover:shadow-md transition-all duration-200">
                 <i data-lucide="tag" class="h-3 w-3"></i>
                 ${interest}

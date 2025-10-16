@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 import os
@@ -14,7 +15,7 @@ load_dotenv(find_dotenv())
 
 # Minimal observability via Arize/OpenInference (optional)
 try:
-    from arize.otel import register
+    from arize.otel import register  # pyright: ignore[reportMissingImports]
     from openinference.instrumentation.langchain import LangChainInstrumentor
     from openinference.instrumentation.litellm import LiteLLMInstrumentor
     from openinference.instrumentation import using_prompt_template, using_metadata, using_attributes
@@ -514,9 +515,10 @@ def get_city_image(destination: str, day_theme: str = "") -> str:
     unsplash_key = os.getenv("UNSPLASH_API_KEY")
     
     if not unsplash_key:
-        # Fallback to picsum with destination-based seed
+        # Fallback to picsum with destination and theme-based seed for unique images per day
         import hashlib
-        seed = int(hashlib.md5(destination.encode()).hexdigest()[:8], 16)
+        combined = f"{destination}_{day_theme}"
+        seed = int(hashlib.md5(combined.encode()).hexdigest()[:8], 16)
         return f"https://picsum.photos/800/400?random={seed}"
     
     try:
@@ -762,6 +764,14 @@ def itinerary_agent(state: TripState) -> TripState:
     interests = req.get("interests", "")
     user_input = (req.get("user_input") or "").strip()
     
+    # Extract duration number for generating day images
+    duration_num = 1
+    try:
+        duration_str = duration.lower().replace("days", "").replace("day", "").strip()
+        duration_num = int(duration_str) if duration_str.isdigit() else 1
+    except:
+        duration_num = 1
+    
     prompt_parts = [
         "Create a CONCISE, VISUAL {duration} itinerary for {destination} ({travel_style}).",
         "",
@@ -772,91 +782,66 @@ def itinerary_agent(state: TripState) -> TripState:
         "2. IMAGES - For EACH day, add a hero image at the top: ![Day X](IMAGE_URL_PLACEHOLDER_DAY_X) (will be replaced with real city images)",
         "   CRITICAL: You MUST create an image placeholder for EVERY single day. If duration is 5 days, create IMAGE_URL_PLACEHOLDER_DAY_1, IMAGE_URL_PLACEHOLDER_DAY_2, IMAGE_URL_PLACEHOLDER_DAY_3, IMAGE_URL_PLACEHOLDER_DAY_4, IMAGE_URL_PLACEHOLDER_DAY_5",
         "3. EMOJIS - Use emojis heavily for visual appeal (🏛️ 🍝 🎨 🌃 ☕ 🚇 💶 📸 🗺️ ⭐)",
-        "4. ACTION ITEMS - After each activity, add action links:",
-        f"   - 🗺️ [Get Directions](https://maps.google.com/?q={destination}+Location+Name)",
-        f"   - 🎫 [Book Tickets](https://www.getyourguide.com/s/?q={destination}+Attraction+Name)",
-        f"   - 📸 [Photos](https://unsplash.com/s/photos/{destination}+location-name)",
-        "   IMPORTANT: Replace 'Location+Name' and 'Attraction+Name' with ACTUAL place names (e.g., 'Eiffel+Tower', 'Colosseum')",
+        "4. ACTION ITEMS - After each activity, add action links with destination context:",
+        f"   - 🗺️ [Directions](https://maps.google.com/?q=[LOCATION_NAME]+{destination})",
+        f"   - 🎫 [Tickets](https://www.getyourguide.com/s/?q=[ATTRACTION_NAME]+{destination})",
+        f"   - 📸 [Photos](https://unsplash.com/search/photos/[LOCATION_NAME]+{destination})",
+        "   IMPORTANT: Replace [LOCATION_NAME] and [ATTRACTION_NAME] with ACTUAL place names (e.g., 'Eiffel Tower', 'Colosseum')",
         "",
         "STRUCTURE:",
-        "# 🌍 {destination} in {duration}",
+        "## Welcome to {destination}",
+        "Start with a brief, engaging introduction about {destination} - highlight what makes it special, its unique character, and why it's worth visiting. Include 2-3 key highlights that set the destination apart.",
         "",
-        "IMPORTANT: Create EXACTLY the number of days specified in the duration. If duration is '5 days', create Day 1, Day 2, Day 3, Day 4, Day 5.",
+        "IMPORTANT: Create EXACTLY the number of days specified in the duration. If duration is '7 days', create Day 1, Day 2, Day 3, Day 4, Day 5, Day 6, Day 7.",
         "",
-        "### Day 1: [Short Theme - e.g., 'Historic Heart']",
+        "STRUCTURE FOR EACH DAY:",
+        "### Day X: [Short Theme - e.g., 'Historic Heart', 'Cultural Gems', 'Local Flavors', 'Nature & Parks', 'Art & Museums', 'Food & Markets', 'Nightlife & Entertainment']",
         "",
-        "![Day 1](IMAGE_URL_PLACEHOLDER_DAY_1)",
+        "![Day X](IMAGE_URL_PLACEHOLDER_DAY_X)",
         "",
-        "**Morning** ☀️",
-        "- 🏛️ **[Attraction]** - Brief 1-line description",
+        "**☀️ Morning**",
+        "- 🏛️ **[SPECIFIC ATTRACTION NAME]** - Brief 1-line description",
         "  - 💶 Cost | ⏱️ 2 hours",
-        "  - 🗺️ [Directions](https://maps.google.com/?q=Attraction) | 🎫 [Tickets](https://getyourguide.com)",
+        "  - 🗺️ [Directions](https://maps.google.com/?q=[SPECIFIC_ATTRACTION_NAME]+{destination}) | 🎫 [Tickets](https://www.getyourguide.com/s/?q=[SPECIFIC_ATTRACTION_NAME]+{destination})",
         "",
-        "**Afternoon** 🌤️",
-        "- 🍝 **[Restaurant/Activity]** - Brief description",
+        "**🌤️ Afternoon**",
+        "- 🍝 **[SPECIFIC RESTAURANT NAME]** - Brief description",
         "  - 💶 Cost | ⏱️ Duration",
-        "  - 🗺️ [Directions](https://maps.google.com/?q=Restaurant+Name) | 📸 [Photos](https://unsplash.com/s/photos/restaurant-name)",
+        "  - 🗺️ [Directions](https://maps.google.com/?q=[SPECIFIC_RESTAURANT_NAME]+{destination}) | 📸 [Photos](https://unsplash.com/search/photos/[SPECIFIC_RESTAURANT_NAME]+{destination})",
         "",
-        "**Evening** 🌆",
-        "- 🌆 **[Evening Activity]** - Brief description",
+        "**🌆 Evening**",
+        "- 🌆 **[SPECIFIC EVENING ACTIVITY NAME]** - Brief description",
         "  - 💶 Cost | ⏱️ Duration",
-        "  - 🗺️ [Directions](https://maps.google.com/?q=Activity+Name) | 🎫 [Book](https://www.getyourguide.com/s/?q=Activity)",
+        "  - 🗺️ [Directions](https://maps.google.com/?q=[SPECIFIC_EVENING_ACTIVITY]+{destination}) | 🎫 [Tickets](https://www.getyourguide.com/s/?q=[SPECIFIC_EVENING_ACTIVITY]+{destination})",
         "",
         "---",
         "",
-        "### Day 2: [Short Theme - e.g., 'Cultural Gems']",
+        "CRITICAL: Create ALL days from Day 1 to Day {duration_num} where {duration_num} is the duration number. Each day should have Morning, Afternoon, and Evening sections.",
+        "VERIFICATION: You MUST create exactly {duration_num} days. Count them: Day 1, Day 2, Day 3... up to Day {duration_num}.",
         "",
-        "![Day 2](IMAGE_URL_PLACEHOLDER_DAY_2)",
+        "IMPORTANT NAMING RULES:",
+        "- NEVER use generic names like 'Restaurant', 'Activity', 'Attraction', 'Museum', 'Park'",
+        "- ALWAYS use SPECIFIC, REAL place names (e.g., 'Louvre Museum', 'Eiffel Tower', 'Café de Flore', 'Sacre-Coeur Basilica')",
+        "- Research actual attractions, restaurants, and activities in {destination}",
+        "- Use famous landmarks, well-known restaurants, and popular activities",
+        "- Replace [SPECIFIC_ATTRACTION_NAME] with real attraction names",
+        "- Replace [SPECIFIC_RESTAURANT_NAME] with real restaurant names", 
+        "- Replace [SPECIFIC_EVENING_ACTIVITY] with real activity names",
         "",
-        "**Morning** ☀️",
-        "- 🏛️ **[Attraction]** - Brief 1-line description",
-        "  - 💶 Cost | ⏱️ 2 hours",
-        "  - 🗺️ [Directions](https://maps.google.com/?q=Attraction) | 🎫 [Tickets](https://getyourguide.com)",
-        "",
-        "**Afternoon** 🌤️",
-        "- 🍝 **[Restaurant/Activity]** - Brief description",
-        "  - 💶 Cost | ⏱️ Duration",
-        "  - 🗺️ [Directions](https://maps.google.com/?q=Restaurant+Name) | 📸 [Photos](https://unsplash.com/s/photos/restaurant-name)",
-        "",
-        "**Evening** 🌆",
-        "- 🌆 **[Evening Activity]** - Brief description",
-        "  - 💶 Cost | ⏱️ Duration",
-        "  - 🗺️ [Directions](https://maps.google.com/?q=Activity+Name) | 🎫 [Book](https://www.getyourguide.com/s/?q=Activity)",
-        "",
-        "---",
-        "",
-        "### Day 3: [Short Theme - e.g., 'Local Flavors']",
-        "",
-        "![Day 3](IMAGE_URL_PLACEHOLDER_DAY_3)",
-        "",
-        "**Morning** ☀️",
-        "- 🏛️ **[Attraction]** - Brief 1-line description",
-        "  - 💶 Cost | ⏱️ 2 hours",
-        "  - 🗺️ [Directions](https://maps.google.com/?q=Attraction) | 🎫 [Tickets](https://getyourguide.com)",
-        "",
-        "**Afternoon** 🌤️",
-        "- 🍝 **[Restaurant/Activity]** - Brief description",
-        "  - 💶 Cost | ⏱️ Duration",
-        "  - 🗺️ [Directions](https://maps.google.com/?q=Restaurant+Name) | 📸 [Photos](https://unsplash.com/s/photos/restaurant-name)",
-        "",
-        "**Evening** 🌆",
-        "- 🌆 **[Evening Activity]** - Brief description",
-        "  - 💶 Cost | ⏱️ Duration",
-        "  - 🗺️ [Directions](https://maps.google.com/?q=Activity+Name) | 🎫 [Book](https://www.getyourguide.com/s/?q=Activity)",
-        "",
-        "---",
-        "",
-        "CRITICAL: Create ALL days from Day 1 to Day X where X is the duration number. Each day should have Morning, Afternoon, and Evening sections.",
+        "CRITICAL LINK FORMAT:",
+        "- Use EXACTLY this format for photo links: https://unsplash.com/search/photos/[PLACE_NAME]+{destination}",
+        "- NEVER use the old format: https://unsplash.com/s/photos/",
+        "- Example: https://unsplash.com/search/photos/Colosseum+Rome",
         "IMPORTANT: Each day MUST have its own image placed immediately after the day header. Follow this exact structure:",
         "### Day X: [Theme]",
         "",
         "![Day X](IMAGE_URL_PLACEHOLDER_DAY_X)",
         "",
-        "**Morning** ☀️",
+        "**☀️ Morning**",
         "...",
-        "**Afternoon** 🌤️",
+        "**🌤️ Afternoon**",
         "...",
-        "**Evening** 🌆",
+        "**🌆 Evening**",
         "...",
         "---",
         "",
@@ -894,6 +879,7 @@ def itinerary_agent(state: TripState) -> TripState:
         "duration": duration,
         "destination": destination,
         "travel_style": travel_style,
+        "duration_num": duration_num,
         "interests": interests or "general travel",
         "research": (state.get("research") or "")[:400],
         "budget": (state.get("budget") or "")[:400],
@@ -920,21 +906,58 @@ def itinerary_agent(state: TripState) -> TripState:
     # Process the content to replace image placeholders with real city images
     content = res.content
     
-    # Extract duration number for generating day images
-    duration_num = 1
-    try:
-        duration_str = duration.lower().replace("days", "").replace("day", "").strip()
-        duration_num = int(duration_str) if duration_str.isdigit() else 1
-    except:
-        duration_num = 1
+    # Validate that all required days are present
+    missing_days = []
+    for day in range(1, duration_num + 1):
+        day_header = f"### Day {day}:"
+        if day_header not in content:
+            missing_days.append(day)
     
+    if missing_days:
+        print(f"⚠️ Missing days detected: {missing_days}")
+        # Add missing days with basic structure
+        for day in missing_days:
+            day_theme = f"Day {day} Activities"
+            missing_day_content = f"""
+
+### Day {day}: {day_theme}
+
+![Day {day}](IMAGE_URL_PLACEHOLDER_DAY_{day})
+
+**Morning** ☀️
+- 🏛️ **[Attraction]** - Explore local highlights
+  - 💶 Cost varies | ⏱️ 2-3 hours
+  - 🗺️ [Directions](https://maps.google.com/?q=Attraction+{destination}) | 🎫 [Tickets](https://www.getyourguide.com/s/?q=Attraction+{destination})
+
+**Afternoon** 🌤️
+- 🍝 **[Restaurant/Activity]** - Local experience
+  - 💶 Cost varies | ⏱️ 1-2 hours
+  - 🗺️ [Directions](https://maps.google.com/?q=Restaurant+{destination}) | 📸 [Photos](https://unsplash.com/search/photos/restaurant+{destination})
+
+**Evening** 🌆
+- 🌆 **[Evening Activity]** - Relax and enjoy
+  - 💶 Cost varies | ⏱️ 2-3 hours
+  - 🗺️ [Directions](https://maps.google.com/?q=Activity+{destination}) | 🎫 [Tickets](https://www.getyourguide.com/s/?q=Activity+{destination})
+
+---
+"""
+            # Insert missing day content before the budget section
+            budget_pos = content.find("## 💰 Budget Snapshot")
+            if budget_pos != -1:
+                content = content[:budget_pos] + missing_day_content + content[budget_pos:]
+            else:
+                content += missing_day_content
+            print(f"✅ Added missing Day {day} content")
+
     # Replace image placeholders with actual city images
     for day in range(1, duration_num + 1):
         # Get different images for each day with day-specific themes
-        day_themes = ["morning", "afternoon", "evening", "landmarks", "culture", "food", "nature", "architecture"]
+        day_themes = ["morning", "afternoon", "evening", "landmarks", "culture", "food", "nature", "architecture", "street", "market", "museum", "park", "beach", "mountain", "skyline", "nightlife"]
         theme = day_themes[(day - 1) % len(day_themes)]
         
-        image_url = get_city_image(destination, theme)
+        # Add day number to ensure uniqueness even with same theme
+        unique_theme = f"{theme}_day{day}"
+        image_url = get_city_image(destination, unique_theme)
         placeholder = f"IMAGE_URL_PLACEHOLDER_DAY_{day}"
         
         # Check if placeholder exists in content
@@ -950,6 +973,16 @@ def itinerary_agent(state: TripState) -> TripState:
                 image_markdown = f"\n\n![Day {day}]({image_url})\n"
                 content = content.replace(day_header, day_header + image_markdown)
                 print(f"✅ Added {destination} {theme} image for Day {day}")
+    
+    # Fix Unsplash URLs - replace old format with new format
+    content = content.replace("https://unsplash.com/s/photos/", "https://unsplash.com/search/photos/")
+    
+    # Final validation: count actual days in content
+    actual_days = content.count("### Day ")
+    print(f"📊 Generated {actual_days} days out of {duration_num} requested")
+    
+    if actual_days < duration_num:
+        print(f"⚠️ WARNING: Only {actual_days} days generated, expected {duration_num}")
     
     return {"messages": [SystemMessage(content=content)], "final": content}
 
@@ -985,6 +1018,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Mount static files
+app.mount("/static", StaticFiles(directory="../frontend"), name="static")
 
 
 @app.get("/")
@@ -1104,7 +1140,23 @@ def plan_trip(req: TripRequest):
         with using_attributes(**attrs_kwargs):
             out = graph.invoke(state)
     
-    return TripResponse(result=out.get("final", ""), tool_calls=out.get("tool_calls", []))
+    # Fix Unsplash URLs in final result
+    final_result = out.get("final", "")
+    if final_result:
+        # Count old format URLs
+        old_count = final_result.count("https://unsplash.com/s/photos/")
+        
+        # Replace old format with new format
+        final_result = final_result.replace("https://unsplash.com/s/photos/", "https://unsplash.com/search/photos/")
+        
+        # Also handle any URLs without https:// prefix
+        final_result = final_result.replace("unsplash.com/s/photos/", "unsplash.com/search/photos/")
+        
+        new_count = final_result.count("https://unsplash.com/search/photos/")
+        if old_count > 0:
+            print(f"🔧 Fixed {old_count} Unsplash URLs from old format to new format")
+    
+    return TripResponse(result=final_result, tool_calls=out.get("tool_calls", []))
 
 
 if __name__ == "__main__":

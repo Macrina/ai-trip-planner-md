@@ -6,8 +6,10 @@
   "scripts": {
     "start": "cd backend && python3 -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload",
     "dev": "cd backend && python3 -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload",
+    "build-css": "npx tailwindcss -i ./src/input.css -o ./frontend/styles.css --watch",
+    "build-css-prod": "npx tailwindcss -i ./src/input.css -o ./frontend/styles.css --minify",
     "install-deps": "pip install -r backend/requirements.txt",
-    "setup": "npm run install-deps && echo 'Setup complete! Run npm start to begin development.'",
+    "setup": "npm run install-deps && npm run build-css-prod && echo 'Setup complete! Run npm start to begin development.'",
     "test": "cd backend && python3 -m pytest",
     "lint": "cd backend && python3 -m flake8 .",
     "format": "cd backend && python3 -m black ."
@@ -28,9 +30,12 @@
     "python": ">=3.14.0"
   },
   "devDependencies": {
+    "autoprefixer": "^10.4.21",
+    "eslint": "^8.0.0",
     "live-server": "^1.2.2",
+    "postcss": "^8.5.6",
     "prettier": "^3.0.0",
-    "eslint": "^8.0.0"
+    "tailwindcss": "^3.4.18"
   },
   "dependencies": {
     "marked": "^9.0.0"
