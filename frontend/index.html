@@ -337,11 +337,27 @@
       renderIcons();
 
       try {
-        const resp = await fetch('/plan-trip', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ destination, duration, budget, interests })
-        });
+        // Try different ports if the default doesn't work
+        const ports = [8002, 8000, 8001, 8003, 8004, 8005];
+        let resp;
+        
+        for (const port of ports) {
+          try {
+            resp = await fetch(`http://localhost:${port}/plan-trip`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ destination, duration, budget, interests })
+            });
+            if (resp.ok) break; // Found working port
+          } catch (e) {
+            console.log(`Port ${port} not available, trying next...`);
+            continue;
+          }
+        }
+        
+        if (!resp || !resp.ok) {
+          throw new Error('Could not connect to backend on any port');
+        }
 
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         const data = await resp.json();
@@ -349,17 +365,19 @@
 
         // Configure marked.js to render links properly
         if (window.marked) {
-          window.marked.setOptions({
-            breaks: true,
-            gfm: true,
-            renderer: new window.marked.Renderer()
-          });
+          const renderer = new window.marked.Renderer();
           
           // Custom link renderer to ensure proper button styling
-          window.marked.Renderer.prototype.link = function(href, title, text) {
+          renderer.link = function(href, title, text) {
             const titleAttr = title ? ` title="${title}"` : '';
             return `<a href="${href}" target="_blank" rel="noopener noreferrer"${titleAttr}>${text}</a>`;
           };
+          
+          window.marked.setOptions({
+            breaks: true,
+            gfm: true,
+            renderer: renderer
+          });
         }
         
         let content = (window.marked && window.marked.parse) ? window.marked.parse(md) : `<pre class="whitespace-pre-wrap">${md}</pre>`;

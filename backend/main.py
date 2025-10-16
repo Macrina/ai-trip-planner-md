@@ -1016,42 +1016,46 @@ def itinerary_agent(state: TripState) -> TripState:
     content = content.replace("https://unsplash.com/s/photos/", "https://unsplash.com/search/photos/")
     
     # Post-process to fix generic placeholders in action links
-    import re
-    
-    # Fix generic placeholders in Google Maps links
-    maps_pattern = r'https://maps\.google\.com/\?q=([^+]+)\+([^)]+)'
-    def fix_maps_link(match):
-        place_name = match.group(1)
-        destination = match.group(2)
-        # If place name is generic, use a more specific search
-        if place_name.lower() in ['attraction', 'restaurant', 'activity', 'restaurant/activity', 'evening activity']:
-            return f"https://maps.google.com/?q={destination}+attractions"
-        return match.group(0)
-    content = re.sub(maps_pattern, fix_maps_link, content)
-    
-    # Fix generic placeholders in GetYourGuide links
-    tickets_pattern = r'https://www\.getyourguide\.com/s/\?q=([^+]+)\+([^)]+)'
-    def fix_tickets_link(match):
-        place_name = match.group(1)
-        destination = match.group(2)
-        # If place name is generic, use a more specific search
-        if place_name.lower() in ['attraction', 'restaurant', 'activity', 'restaurant/activity', 'evening activity']:
-            return f"https://www.getyourguide.com/s/?q={destination}+tours"
-        return match.group(0)
-    content = re.sub(tickets_pattern, fix_tickets_link, content)
-    
-    # Fix generic placeholders in Unsplash photo links
-    photos_pattern = r'https://unsplash\.com/search/photos/([^+]+)\+([^)]+)'
-    def fix_photos_link(match):
-        place_name = match.group(1)
-        destination = match.group(2)
-        # If place name is generic, use a more specific search
-        if place_name.lower() in ['attraction', 'restaurant', 'activity', 'restaurant/activity', 'evening activity']:
-            return f"https://unsplash.com/search/photos/{destination}+city"
-        return match.group(0)
-    content = re.sub(photos_pattern, fix_photos_link, content)
-    
-    print(f"🔧 Post-processed action links to fix generic placeholders")
+    try:
+        import re
+        
+        # Fix generic placeholders in Google Maps links
+        maps_pattern = r'https://maps\.google\.com/\?q=([^+]+)\+([^)]+)'
+        def fix_maps_link(match):
+            place_name = match.group(1)
+            destination = match.group(2)
+            # If place name is generic, use a more specific search
+            if place_name.lower() in ['attraction', 'restaurant', 'activity', 'restaurant/activity', 'evening activity']:
+                return f"https://maps.google.com/?q={destination}+attractions"
+            return match.group(0)
+        content = re.sub(maps_pattern, fix_maps_link, content)
+        
+        # Fix generic placeholders in GetYourGuide links
+        tickets_pattern = r'https://www\.getyourguide\.com/s/\?q=([^+]+)\+([^)]+)'
+        def fix_tickets_link(match):
+            place_name = match.group(1)
+            destination = match.group(2)
+            # If place name is generic, use a more specific search
+            if place_name.lower() in ['attraction', 'restaurant', 'activity', 'restaurant/activity', 'evening activity']:
+                return f"https://www.getyourguide.com/s/?q={destination}+tours"
+            return match.group(0)
+        content = re.sub(tickets_pattern, fix_tickets_link, content)
+        
+        # Fix generic placeholders in Unsplash photo links
+        photos_pattern = r'https://unsplash\.com/search/photos/([^+]+)\+([^)]+)'
+        def fix_photos_link(match):
+            place_name = match.group(1)
+            destination = match.group(2)
+            # If place name is generic, use a more specific search
+            if place_name.lower() in ['attraction', 'restaurant', 'activity', 'restaurant/activity', 'evening activity']:
+                return f"https://unsplash.com/search/photos/{destination}+city"
+            return match.group(0)
+        content = re.sub(photos_pattern, fix_photos_link, content)
+        
+        print(f"🔧 Post-processed action links to fix generic placeholders")
+    except Exception as e:
+        print(f"⚠️ Error in post-processing: {e}")
+        # Continue without post-processing
     
     # Final validation: count actual days in content
     actual_days = content.count("### Day ")
@@ -1237,4 +1241,20 @@ def plan_trip(req: TripRequest):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    import socket
+    
+    def find_free_port(start_port=8000, max_port=8010):
+        """Find a free port starting from start_port"""
+        for port in range(start_port, max_port):
+            try:
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    s.bind(('localhost', port))
+                    return port
+            except OSError:
+                continue
+        raise RuntimeError(f"No free port found between {start_port} and {max_port}")
+    
+    # Find a free port
+    port = find_free_port()
+    print(f"🚀 Starting backend on port {port}")
+    uvicorn.run(app, host="0.0.0.0", port=port)
