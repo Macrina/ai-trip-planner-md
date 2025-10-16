@@ -514,7 +514,8 @@ def get_city_image(destination: str, day_theme: str = "") -> str:
     """Get a city image from Unsplash API using destination keyword."""
     unsplash_key = os.getenv("UNSPLASH_API_KEY")
     
-    if not unsplash_key:
+    if not unsplash_key or unsplash_key == "your_unsplash_api_key_here":
+        print(f"⚠️ Unsplash API key not found, using Picsum fallback for {destination}")
         # Fallback to picsum with destination and theme-based seed for unique images per day
         import hashlib
         combined = f"{destination}_{day_theme}"
@@ -522,34 +523,62 @@ def get_city_image(destination: str, day_theme: str = "") -> str:
         return f"https://picsum.photos/800/400?random={seed}"
     
     try:
-        # Search for city images
-        search_query = f"{destination} city"
+        # Create more specific search query based on day theme
+        search_query = destination
         if day_theme:
-            search_query += f" {day_theme}"
+            # Map day themes to better search terms
+            theme_mapping = {
+                "morning": "morning sunrise",
+                "afternoon": "afternoon landmarks",
+                "evening": "evening sunset",
+                "landmarks": "landmarks architecture",
+                "culture": "culture museums",
+                "food": "food restaurants",
+                "nature": "nature parks",
+                "historic": "historic old town",
+                "art": "art galleries",
+                "markets": "markets shopping"
+            }
+            
+            # Extract theme from day_theme (e.g., "morning_day1" -> "morning")
+            theme = day_theme.split('_')[0] if '_' in day_theme else day_theme
+            if theme in theme_mapping:
+                search_query += f" {theme_mapping[theme]}"
+            else:
+                search_query += f" {theme}"
+        
+        print(f"🔍 Searching Unsplash for: {search_query}")
         
         url = "https://api.unsplash.com/search/photos"
         headers = {"Authorization": f"Client-ID {unsplash_key}"}
         params = {
             "query": search_query,
-            "per_page": 1,
+            "per_page": 3,  # Get more options
             "orientation": "landscape"
         }
         
-        response = requests.get(url, headers=headers, params=params, timeout=5)
+        response = requests.get(url, headers=headers, params=params, timeout=10)
         
         if response.status_code == 200:
             data = response.json()
             if data.get("results") and len(data["results"]) > 0:
+                # Use the first result
                 image_url = data["results"][0]["urls"]["regular"]
+                print(f"✅ Found Unsplash image for {destination}: {search_query}")
                 return image_url
+            else:
+                print(f"⚠️ No Unsplash results for: {search_query}")
+        else:
+            print(f"⚠️ Unsplash API error: {response.status_code} - {response.text}")
         
         # Fallback if API fails
         import hashlib
         seed = int(hashlib.md5(destination.encode()).hexdigest()[:8], 16)
+        print(f"🔄 Falling back to Picsum for {destination}")
         return f"https://picsum.photos/800/400?random={seed}"
         
     except Exception as e:
-        print(f"Unsplash API error: {e}")
+        print(f"❌ Unsplash API error: {e}")
         # Fallback to picsum
         import hashlib
         seed = int(hashlib.md5(destination.encode()).hexdigest()[:8], 16)
