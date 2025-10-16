@@ -30,3 +30,5 @@ services:
         sync: false
       - key: ARIZE_API_KEY
         sync: false
+      - key: UNSPLASH_API_KEY
+        value: 0WgJ6tnmEFaBFJiPTOPGQ9XnLMFtIKNzW82bsI8y-no
