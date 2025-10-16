@@ -12,6 +12,60 @@ A **production-ready multi-agent system** built for learning and customization. 
 
 **Perfect for:** Students learning to build, evaluate, and deploy agentic AI systems.
 
+## ✨ Recent Improvements
+
+### 🎨 Enhanced User Interface
+- **Modern Tabbed Interface**: Day-by-day itinerary navigation with smooth transitions
+- **Action Buttons**: Beautiful, color-coded buttons for directions, tickets, and photos
+- **Responsive Design**: Works perfectly on desktop and mobile devices
+- **Accordion Sidebar**: Expandable sections for budget, tips, and useful links
+- **Smart Autocomplete**: Destination input with static database + API fallback
+
+### 🖼️ Visual Enhancements
+- **Destination Images**: Real city photos for each day using Unsplash API
+- **Dynamic Image Loading**: Unique images per day based on destination and theme
+- **Fallback System**: Graceful degradation to Picsum when Unsplash unavailable
+- **Image Optimization**: Proper sizing and loading for web performance
+
+### 🎯 Improved Content Quality
+- **Specific Place Names**: No more generic "Restaurant/Activity" - uses real landmarks
+- **Working Photo Links**: Fixed Unsplash URLs to display actual destination photos
+- **Enhanced Budget Display**: Automatic total calculation with visual breakdown
+- **Better Action Links**: All external links open in new tabs with proper styling
+
+### 🛠️ Technical Improvements
+- **Tailwind CSS Integration**: Local build system replacing CDN for better performance
+- **Node.js Tooling**: Added npm scripts, live-server, prettier, and eslint
+- **Static File Serving**: FastAPI now serves frontend assets efficiently
+- **Post-Processing**: Automatic URL format correction and content validation
+
+## Key Features
+
+### 🎯 Smart Itinerary Generation
+- **Multi-Agent System**: Research, Budget, Local, and Itinerary agents work in parallel
+- **Real-time Data**: Weather, web search, local recommendations with API fallbacks
+- **RAG System**: Local guide database with web search fallback for authentic experiences
+- **Specific Recommendations**: Real landmarks and restaurants instead of generic suggestions
+
+### 🎨 Modern User Interface
+- **Tabbed Navigation**: Day-by-day itinerary with smooth transitions and modern design
+- **Action Buttons**: Color-coded buttons for directions (blue), tickets (green), and photos (purple)
+- **Responsive Design**: Works perfectly on desktop and mobile with full-height layout
+- **Smart Autocomplete**: Destination input with static database + API fallback
+- **Accordion Sidebar**: Expandable sections for Budget, Tips, and Useful Links
+
+### 🖼️ Visual Experience
+- **Destination Images**: Real city photos for each day using Unsplash API
+- **Dynamic Loading**: Unique images per day based on destination and theme
+- **Fallback System**: Graceful degradation to Picsum when Unsplash unavailable
+- **Enhanced Budget**: Automatic total calculation with visual breakdown and gradient styling
+
+### 🛠️ Developer Experience
+- **Node.js Integration**: npm scripts, live-server, prettier, eslint for modern development
+- **Tailwind CSS**: Local build system with PostCSS for optimized styling
+- **Static File Serving**: FastAPI serves frontend assets efficiently
+- **Hot Reload**: Development server with automatic CSS rebuilding
+
 ## Architecture
 
 ```
@@ -23,6 +77,7 @@ A **production-ready multi-agent system** built for learning and customization. 
                     ┌────────────▼────────────┐
                     │   FastAPI Endpoint      │
                     │   + Session Tracking    │
+                    │   + Static File Serving │
                     └────────────┬────────────┘
                                  │
                     ┌────────────▼────────────┐
@@ -49,11 +104,14 @@ A **production-ready multi-agent system** built for learning and customization. 
                             │Itinerary │
                             │  Agent   │
                             │(Synthesis)│
+                            │+ Images  │
                             └────┬─────┘
                                  │
                     ┌────────────▼────────────┐
                     │   Final Itinerary       │
                     │   + Tool Call Metadata  │
+                    │   + Day Images          │
+                    │   + Action Buttons      │
                     └─────────────────────────┘
 
 All agents, tools, and LLM calls → Arize Observability Platform
@@ -195,24 +253,34 @@ docker-compose up --build
 ```
 
 ## Project Structure
-- `backend/`: FastAPI app (`main.py`), LangGraph agents, tracing hooks.
-- `frontend/index.html`: Minimal static UI served by backend at `/`.
+- `backend/`: FastAPI app (`main.py`), LangGraph agents, tracing hooks, static file serving.
+- `frontend/`: Complete UI with `index.html`, compiled `styles.css`, and `cities.json` for autocomplete.
+- `src/`: Tailwind CSS source files (`input.css`) for local build system.
 - `optional/airtable/`: Airtable integration (optional, not on critical path).
 - `test scripts/`: `test_api.py`, `synthetic_data_gen.py` for quick checks/evals.
-- Root: `start.sh`, `docker-compose.yml`, `README.md`.
+- Root: `start.sh`, `docker-compose.yml`, `README.md`, `package.json`, `tailwind.config.js`, `postcss.config.js`.
 
 ## Development Commands
+
+### Backend Development
 - Backend (dev): `uvicorn main:app --host 0.0.0.0 --port 8000 --reload`
 - API smoke test: `python "test scripts"/test_api.py`
 - Synthetic evals: `python "test scripts"/synthetic_data_gen.py --base-url http://localhost:8000 --count 12`
 
+### Frontend Development
+- Build CSS: `npm run build-css` (watch mode) or `npm run build-css-prod` (production)
+- Start dev server: `npm start` (starts backend + serves frontend)
+- Frontend only: `live-server frontend --port=3000 --open=/index.html`
+
 ## API
-- POST `/plan-trip` → returns a generated itinerary.
+- POST `/plan-trip` → returns a generated itinerary with images and action buttons.
   Example body:
   ```json
   {"destination":"Tokyo, Japan","duration":"7 days","budget":"$2000","interests":"food, culture"}
   ```
 - GET `/health` → simple status.
+- GET `/cities.json` → autocomplete data for destination input.
+- GET `/static/*` → serves frontend assets (CSS, images, etc.).
 
 ## Notes on Tracing (Optional)
 - If `ARIZE_SPACE_ID` and `ARIZE_API_KEY` are set, OpenInference exports spans for agents/tools/LLM calls. View at https://app.arize.com.
@@ -300,6 +368,11 @@ live-server frontend --port=3000 --open=/index.html
 - **Port conflicts**: Stop existing services on 3000/8000 or change ports
 - **RAG not working**: Check `ENABLE_RAG=1` and `OPENAI_API_KEY` are both set
 - **Slow responses**: Web search APIs may timeout; LLM fallback will handle it
+- **Layout broken**: Ensure `npm run build-css-prod` has been run to generate `frontend/styles.css`
+- **Images not loading**: Check `UNSPLASH_API_KEY` is set, or images will fallback to Picsum
+- **Generic suggestions**: Ensure backend is running latest code with specific naming rules
+- **Button links not working**: Check that markdown renderer is properly configured
+- **Node.js issues**: Use `nvm use` to switch to correct Node.js version (LTS)
 
 ## Deploy on Render
 - This repo includes `render.yaml`. Connect your GitHub repo in Render and deploy as a Web Service.
