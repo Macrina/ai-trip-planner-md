@@ -368,7 +368,10 @@
           const renderer = new window.marked.Renderer();
           
           // Custom link renderer to ensure proper button styling
-          renderer.link = function(href, title, text) {
+          renderer.link = function(token) {
+            const href = token.href || '';
+            const title = token.title || '';
+            const text = token.text || '';
             const titleAttr = title ? ` title="${title}"` : '';
             return `<a href="${href}" target="_blank" rel="noopener noreferrer"${titleAttr}>${text}</a>`;
           };
