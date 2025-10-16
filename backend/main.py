@@ -86,7 +86,7 @@ def _init_llm():
                 tool_calls: List[Dict[str, Any]] = []
             return _Msg()
 
-    if os.getenv("TEST_MODE"):
+    if os.getenv("TEST_MODE") == "1":
         return _Fake()
     if os.getenv("OPENAI_API_KEY"):
         return ChatOpenAI(model="gpt-3.5-turbo", temperature=0.7, max_tokens=1500)
@@ -159,7 +159,7 @@ class LocalGuideRetriever:
         self._vectorstore: Optional[InMemoryVectorStore] = None
         
         # Only create embeddings when RAG is enabled and we have an API key
-        if ENABLE_RAG and self._docs and not os.getenv("TEST_MODE"):
+        if ENABLE_RAG and self._docs and os.getenv("TEST_MODE") != "1":
             try:
                 model = os.getenv("OPENAI_EMBED_MODEL", "text-embedding-3-small")
                 self._embeddings = OpenAIEmbeddings(model=model)
@@ -812,10 +812,11 @@ def itinerary_agent(state: TripState) -> TripState:
         "   CRITICAL: You MUST create an image placeholder for EVERY single day. If duration is 5 days, create IMAGE_URL_PLACEHOLDER_DAY_1, IMAGE_URL_PLACEHOLDER_DAY_2, IMAGE_URL_PLACEHOLDER_DAY_3, IMAGE_URL_PLACEHOLDER_DAY_4, IMAGE_URL_PLACEHOLDER_DAY_5",
         "3. EMOJIS - Use emojis heavily for visual appeal (🏛️ 🍝 🎨 🌃 ☕ 🚇 💶 📸 🗺️ ⭐)",
         "4. ACTION ITEMS - After each activity, add action links with destination context:",
-        f"   - 🗺️ [Directions](https://maps.google.com/?q=[LOCATION_NAME]+{destination})",
-        f"   - 🎫 [Tickets](https://www.getyourguide.com/s/?q=[ATTRACTION_NAME]+{destination})",
-        f"   - 📸 [Photos](https://unsplash.com/search/photos/[LOCATION_NAME]+{destination})",
-        "   IMPORTANT: Replace [LOCATION_NAME] and [ATTRACTION_NAME] with ACTUAL place names (e.g., 'Eiffel Tower', 'Colosseum')",
+        f"   - 🗺️ [Directions](https://maps.google.com/?q=ACTUAL_PLACE_NAME+{destination})",
+        f"   - 🎫 [Tickets](https://www.getyourguide.com/s/?q=ACTUAL_PLACE_NAME+{destination})",
+        f"   - 📸 [Photos](https://unsplash.com/search/photos/ACTUAL_PLACE_NAME+{destination})",
+        "   CRITICAL: Replace ACTUAL_PLACE_NAME with the REAL, SPECIFIC place name from the activity above",
+        "   EXAMPLES: 'Eiffel Tower', 'Colosseum', 'Sagrada Familia', 'Louvre Museum', 'Times Square'",
         "",
         "STRUCTURE:",
         "## Welcome to {destination}",
@@ -829,19 +830,19 @@ def itinerary_agent(state: TripState) -> TripState:
         "![Day X](IMAGE_URL_PLACEHOLDER_DAY_X)",
         "",
         "**☀️ Morning**",
-        "- 🏛️ **[SPECIFIC ATTRACTION NAME]** - Brief 1-line description",
+        "- 🏛️ **[REAL ATTRACTION NAME]** - Brief 1-line description",
         "  - 💶 Cost | ⏱️ 2 hours",
-        "  - 🗺️ [Directions](https://maps.google.com/?q=[SPECIFIC_ATTRACTION_NAME]+{destination}) | 🎫 [Tickets](https://www.getyourguide.com/s/?q=[SPECIFIC_ATTRACTION_NAME]+{destination})",
+        "  - 🗺️ [Directions](https://maps.google.com/?q=REAL_ATTRACTION_NAME+{destination}) | 🎫 [Tickets](https://www.getyourguide.com/s/?q=REAL_ATTRACTION_NAME+{destination})",
         "",
         "**🌤️ Afternoon**",
-        "- 🍝 **[SPECIFIC RESTAURANT NAME]** - Brief description",
+        "- 🍝 **[REAL RESTAURANT NAME]** - Brief description",
         "  - 💶 Cost | ⏱️ Duration",
-        "  - 🗺️ [Directions](https://maps.google.com/?q=[SPECIFIC_RESTAURANT_NAME]+{destination}) | 📸 [Photos](https://unsplash.com/search/photos/[SPECIFIC_RESTAURANT_NAME]+{destination})",
+        "  - 🗺️ [Directions](https://maps.google.com/?q=REAL_RESTAURANT_NAME+{destination}) | 📸 [Photos](https://unsplash.com/search/photos/REAL_RESTAURANT_NAME+{destination})",
         "",
         "**🌆 Evening**",
-        "- 🌆 **[SPECIFIC EVENING ACTIVITY NAME]** - Brief description",
+        "- 🌆 **[REAL EVENING ACTIVITY NAME]** - Brief description",
         "  - 💶 Cost | ⏱️ Duration",
-        "  - 🗺️ [Directions](https://maps.google.com/?q=[SPECIFIC_EVENING_ACTIVITY]+{destination}) | 🎫 [Tickets](https://www.getyourguide.com/s/?q=[SPECIFIC_EVENING_ACTIVITY]+{destination})",
+        "  - 🗺️ [Directions](https://maps.google.com/?q=REAL_EVENING_ACTIVITY+{destination}) | 🎫 [Tickets](https://www.getyourguide.com/s/?q=REAL_EVENING_ACTIVITY+{destination})",
         "",
         "---",
         "",
@@ -853,14 +854,22 @@ def itinerary_agent(state: TripState) -> TripState:
         "- ALWAYS use SPECIFIC, REAL place names (e.g., 'Louvre Museum', 'Eiffel Tower', 'Café de Flore', 'Sacre-Coeur Basilica')",
         "- Research actual attractions, restaurants, and activities in {destination}",
         "- Use famous landmarks, well-known restaurants, and popular activities",
-        "- Replace [SPECIFIC_ATTRACTION_NAME] with real attraction names",
-        "- Replace [SPECIFIC_RESTAURANT_NAME] with real restaurant names", 
-        "- Replace [SPECIFIC_EVENING_ACTIVITY] with real activity names",
+        "- Replace REAL_ATTRACTION_NAME with the actual attraction name from the activity above",
+        "- Replace REAL_RESTAURANT_NAME with the actual restaurant name from the activity above", 
+        "- Replace REAL_EVENING_ACTIVITY with the actual activity name from the activity above",
+        "- CRITICAL: The place name in the link MUST match the place name in the activity title",
         "",
         "CRITICAL LINK FORMAT:",
         "- Use EXACTLY this format for photo links: https://unsplash.com/search/photos/[PLACE_NAME]+{destination}",
         "- NEVER use the old format: https://unsplash.com/s/photos/",
         "- Example: https://unsplash.com/search/photos/Colosseum+Rome",
+        "",
+        "CONCRETE EXAMPLE:",
+        "If the activity is: - 🏛️ **Sagrada Familia** - Visit Gaudi's masterpiece",
+        "Then the links should be:",
+        "  - 🗺️ [Directions](https://maps.google.com/?q=Sagrada+Familia+{destination})",
+        "  - 🎫 [Tickets](https://www.getyourguide.com/s/?q=Sagrada+Familia+{destination})",
+        "  - 📸 [Photos](https://unsplash.com/search/photos/Sagrada+Familia+{destination})",
         "IMPORTANT: Each day MUST have its own image placed immediately after the day header. Follow this exact structure:",
         "### Day X: [Theme]",
         "",
@@ -954,19 +963,19 @@ def itinerary_agent(state: TripState) -> TripState:
 ![Day {day}](IMAGE_URL_PLACEHOLDER_DAY_{day})
 
 **Morning** ☀️
-- 🏛️ **[Attraction]** - Explore local highlights
+- 🏛️ **[Local Attraction]** - Explore local highlights
   - 💶 Cost varies | ⏱️ 2-3 hours
-  - 🗺️ [Directions](https://maps.google.com/?q=Attraction+{destination}) | 🎫 [Tickets](https://www.getyourguide.com/s/?q=Attraction+{destination})
+  - 🗺️ [Directions](https://maps.google.com/?q=Local+Attraction+{destination}) | 🎫 [Tickets](https://www.getyourguide.com/s/?q=Local+Attraction+{destination})
 
 **Afternoon** 🌤️
-- 🍝 **[Restaurant/Activity]** - Local experience
+- 🍝 **[Local Restaurant]** - Local dining experience
   - 💶 Cost varies | ⏱️ 1-2 hours
-  - 🗺️ [Directions](https://maps.google.com/?q=Restaurant+{destination}) | 📸 [Photos](https://unsplash.com/search/photos/restaurant+{destination})
+  - 🗺️ [Directions](https://maps.google.com/?q=Local+Restaurant+{destination}) | 📸 [Photos](https://unsplash.com/search/photos/Local+Restaurant+{destination})
 
 **Evening** 🌆
-- 🌆 **[Evening Activity]** - Relax and enjoy
+- 🌆 **[Local Activity]** - Evening entertainment
   - 💶 Cost varies | ⏱️ 2-3 hours
-  - 🗺️ [Directions](https://maps.google.com/?q=Activity+{destination}) | 🎫 [Tickets](https://www.getyourguide.com/s/?q=Activity+{destination})
+  - 🗺️ [Directions](https://maps.google.com/?q=Local+Activity+{destination}) | 🎫 [Tickets](https://www.getyourguide.com/s/?q=Local+Activity+{destination})
 
 ---
 """
@@ -1005,6 +1014,44 @@ def itinerary_agent(state: TripState) -> TripState:
     
     # Fix Unsplash URLs - replace old format with new format
     content = content.replace("https://unsplash.com/s/photos/", "https://unsplash.com/search/photos/")
+    
+    # Post-process to fix generic placeholders in action links
+    import re
+    
+    # Fix generic placeholders in Google Maps links
+    maps_pattern = r'https://maps\.google\.com/\?q=([^+]+)\+([^)]+)'
+    def fix_maps_link(match):
+        place_name = match.group(1)
+        destination = match.group(2)
+        # If place name is generic, use a more specific search
+        if place_name.lower() in ['attraction', 'restaurant', 'activity', 'restaurant/activity', 'evening activity']:
+            return f"https://maps.google.com/?q={destination}+attractions"
+        return match.group(0)
+    content = re.sub(maps_pattern, fix_maps_link, content)
+    
+    # Fix generic placeholders in GetYourGuide links
+    tickets_pattern = r'https://www\.getyourguide\.com/s/\?q=([^+]+)\+([^)]+)'
+    def fix_tickets_link(match):
+        place_name = match.group(1)
+        destination = match.group(2)
+        # If place name is generic, use a more specific search
+        if place_name.lower() in ['attraction', 'restaurant', 'activity', 'restaurant/activity', 'evening activity']:
+            return f"https://www.getyourguide.com/s/?q={destination}+tours"
+        return match.group(0)
+    content = re.sub(tickets_pattern, fix_tickets_link, content)
+    
+    # Fix generic placeholders in Unsplash photo links
+    photos_pattern = r'https://unsplash\.com/search/photos/([^+]+)\+([^)]+)'
+    def fix_photos_link(match):
+        place_name = match.group(1)
+        destination = match.group(2)
+        # If place name is generic, use a more specific search
+        if place_name.lower() in ['attraction', 'restaurant', 'activity', 'restaurant/activity', 'evening activity']:
+            return f"https://unsplash.com/search/photos/{destination}+city"
+        return match.group(0)
+    content = re.sub(photos_pattern, fix_photos_link, content)
+    
+    print(f"🔧 Post-processed action links to fix generic placeholders")
     
     # Final validation: count actual days in content
     actual_days = content.count("### Day ")
