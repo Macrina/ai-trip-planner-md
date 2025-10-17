@@ -26,9 +26,11 @@ services:
         sync: false
       - key: OPENROUTER_MODEL
         value: openai/gpt-4o-mini
-      - key: ARIZE_SPACE_ID
+      - key: TAVILY_API_KEY
         sync: false
-      - key: ARIZE_API_KEY
+      - key: WEATHER_API_KEY
         sync: false
       - key: UNSPLASH_API_KEY
         value: 0WgJ6tnmEFaBFJiPTOPGQ9XnLMFtIKNzW82bsI8y-no
+      - key: TEST_MODE
+        value: "0"
