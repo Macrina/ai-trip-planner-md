@@ -362,26 +362,39 @@
       renderIcons();
 
       try {
-        // Try different ports if the default doesn't work
-        const ports = [8000, 8001, 8002, 8003, 8004, 8005];
+        // Determine backend URL based on environment
+        const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        let backendUrl;
         let resp;
         
-        for (const port of ports) {
-          try {
-            resp = await fetch(`http://localhost:${port}/plan-trip`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ destination, duration, budget, interests })
-            });
-            if (resp.ok) break; // Found working port
-          } catch (e) {
-            console.log(`Port ${port} not available, trying next...`);
-            continue;
+        if (isLocalhost) {
+          // Local development: try different ports
+          const ports = [8000, 8001, 8002, 8003, 8004, 8005];
+          
+          for (const port of ports) {
+            try {
+              resp = await fetch(`http://localhost:${port}/plan-trip`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ destination, duration, budget, interests })
+              });
+              if (resp.ok) break; // Found working port
+            } catch (e) {
+              console.log(`Port ${port} not available, trying next...`);
+              continue;
+            }
           }
-        }
-        
-        if (!resp || !resp.ok) {
-          throw new Error('Could not connect to backend on any port');
+          
+          if (!resp || !resp.ok) {
+            throw new Error('Could not connect to backend on any port');
+          }
+        } else {
+          // Production: use the same domain (Render serves both frontend and backend)
+          resp = await fetch('/plan-trip', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ destination, duration, budget, interests })
+          });
         }
 
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
