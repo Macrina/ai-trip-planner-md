@@ -4,13 +4,26 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Plan Your Perfect Trip</title>
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%234f46e5;stop-opacity:1' /%3E%3Cstop offset='50%25' style='stop-color:%237c3aed;stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:%23c026d3;stop-opacity:1' /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='20' fill='url(%23grad)'/%3E%3Ccircle cx='50' cy='50' r='22' fill='none' stroke='white' stroke-width='4'/%3E%3Cpath d='M 50 28 L 50 44' stroke='white' stroke-width='4' stroke-linecap='round'/%3E%3Cpath d='M 50 56 L 50 72' stroke='white' stroke-width='4' stroke-linecap='round'/%3E%3Cpath d='M 28 50 L 44 50' stroke='white' stroke-width='4' stroke-linecap='round'/%3E%3Cpath d='M 56 50 L 72 50' stroke='white' stroke-width='4' stroke-linecap='round'/%3E%3Cpath d='M 50 28 L 58 50 L 50 54 L 42 50 Z' fill='white'/%3E%3C/svg%3E">
+  
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
   <link href="/static/styles.css" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    /* Body styling */
+    html, body {
+      position: relative;
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+    }
+  </style>
 </head>
-<body class="bg-white text-neutral-900 antialiased font-[Roboto] min-h-screen flex flex-col">
+<body class="text-neutral-900 antialiased font-[Roboto] min-h-screen flex flex-col">
   <!-- Header Logo -->
   <header class="w-full">
     <div class="mx-auto max-w-7xl px-6 pt-6 pb-8">
@@ -26,7 +39,7 @@
   <!-- Planner -->
   <main class="mx-auto max-w-7xl px-6 flex-1 flex flex-col w-full">
         <!-- Enhanced Form Section - Frontend Developer Best Practices -->
-        <section class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-white via-slate-50 to-white border border-slate-200/60 shadow-xl shadow-slate-200/20 mb-8 w-full">
+        <section class="relative overflow-hidden rounded-2xl bg-white border border-slate-200/60 shadow-xl shadow-slate-200/20 mb-8 w-full">
           <!-- Decorative Background Elements -->
           <div class="absolute inset-0 bg-gradient-to-r from-blue-50/30 via-transparent to-purple-50/30 pointer-events-none"></div>
           <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-100/20 to-purple-100/20 rounded-full -translate-y-16 translate-x-16"></div>
@@ -60,13 +73,13 @@
                       type="text" 
                       required 
                       placeholder="Where would you like to go?"
-                      class="w-full h-16 pl-5 pr-12 text-slate-900 placeholder-slate-400 bg-white/90 backdrop-blur-sm border-2 border-slate-200 rounded-2xl shadow-sm transition-all duration-300 focus:border-blue-500 focus:bg-white focus:shadow-xl focus:shadow-blue-500/20 focus:outline-none group-hover:border-slate-300 text-lg font-normal" 
+                      class="w-full h-16 pl-5 pr-12 text-slate-900 placeholder-slate-400 bg-white border-2 border-slate-200 rounded-2xl shadow-sm transition-all duration-300 focus:border-blue-500 focus:shadow-xl focus:shadow-blue-500/20 focus:outline-none group-hover:border-slate-300 text-lg font-normal" 
                     />
                     <div class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors">
             <i data-lucide="search" class="h-5 w-5"></i>
           </div>
                     <!-- Enhanced Autocomplete Dropdown -->
-                    <div id="destinationDropdown" class="absolute z-50 mt-2 hidden w-full overflow-hidden rounded-xl border border-slate-200 bg-white/95 backdrop-blur-sm shadow-2xl shadow-slate-200/50 max-h-64 overflow-y-auto">
+                    <div id="destinationDropdown" class="absolute z-50 mt-2 hidden w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl shadow-slate-200/50 max-h-64 overflow-y-auto">
                       <!-- Suggestions will be populated here -->
         </div>
       </div>
@@ -85,11 +98,12 @@
                        type="number" 
                        inputmode="numeric" 
                        min="1" 
-                       max="30" 
+                       max="5" 
                        step="1" 
                        required 
-                       placeholder="Duration (in days)"
-                       class="w-full h-16 pl-5 pr-5 text-slate-900 placeholder-slate-400 bg-white/90 backdrop-blur-sm border-2 border-slate-200 rounded-2xl shadow-sm transition-all duration-300 focus:border-emerald-500 focus:bg-white focus:shadow-xl focus:shadow-emerald-500/20 focus:outline-none group-hover:border-slate-300 text-lg font-normal" 
+                       placeholder="Duration (1-5 days)"
+                       title="Maximum 5 days"
+                       class="w-full h-16 pl-5 pr-5 text-slate-900 placeholder-slate-400 bg-white border-2 border-slate-200 rounded-2xl shadow-sm transition-all duration-300 focus:border-emerald-500 focus:shadow-xl focus:shadow-emerald-500/20 focus:outline-none group-hover:border-slate-300 text-lg font-normal" 
                      />
             </div>
           </div>
@@ -106,12 +120,12 @@
                     <button 
                       id="budgetBtn" 
                       type="button"
-                      class="w-full h-16 pl-5 pr-5 text-left text-slate-900 bg-white/90 backdrop-blur-sm border-2 border-slate-200 rounded-2xl shadow-sm transition-all duration-300 focus:border-amber-500 focus:bg-white focus:shadow-xl focus:shadow-amber-500/20 focus:outline-none group-hover:border-slate-300 flex items-center justify-between text-lg font-normal"
+                      class="w-full h-16 pl-5 pr-5 text-left text-slate-900 bg-white border-2 border-slate-200 rounded-2xl shadow-sm transition-all duration-300 focus:border-amber-500 focus:shadow-xl focus:shadow-amber-500/20 focus:outline-none group-hover:border-slate-300 flex items-center justify-between text-lg font-normal"
                     >
                       <span id="budgetLabel" class="font-medium">Moderate</span>
                       <i data-lucide="chevron-down" class="h-5 w-5 text-slate-400 group-focus-within:text-amber-500 transition-colors"></i>
             </button>
-                    <div id="budgetMenu" class="absolute z-50 mt-2 hidden w-full overflow-hidden rounded-xl border border-slate-200 bg-white/95 backdrop-blur-sm shadow-2xl shadow-slate-200/50 top-full left-0">
+                    <div id="budgetMenu" class="absolute z-50 mt-2 hidden w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl shadow-slate-200/50 top-full left-0">
                       <button type="button" data-value="budget" class="flex w-full items-center justify-between px-4 py-3 text-sm hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-b-0">
                         <span class="flex items-center gap-3">
                           <i data-lucide="piggy-bank" class="h-4 w-4 text-green-500"></i>
@@ -148,7 +162,7 @@
                     <span class="text-slate-400 text-xs font-normal">(optional)</span>
                   </label>
                   <div class="relative group">
-                    <div id="interestsContainer" class="w-full min-h-[64px] pl-5 pr-5 py-4 text-slate-900 bg-white/90 backdrop-blur-sm border-2 border-slate-200 rounded-2xl shadow-sm transition-all duration-300 focus-within:border-pink-500 focus-within:bg-white focus-within:shadow-xl focus-within:shadow-pink-500/20 group-hover:border-slate-300 flex flex-wrap items-center gap-3">
+                    <div id="interestsContainer" class="w-full min-h-[64px] pl-5 pr-5 py-4 text-slate-900 bg-white border-2 border-slate-200 rounded-2xl shadow-sm transition-all duration-300 focus-within:border-pink-500 focus-within:shadow-xl focus-within:shadow-pink-500/20 group-hover:border-slate-300 flex flex-wrap items-center gap-3">
                       <div id="interestsTags" class="flex flex-wrap gap-2"></div>
                       <input 
                         id="interests" 
@@ -181,7 +195,7 @@
     <!-- Enhanced Output Section - Frontend Developer Best Practices -->
     <section class="flex-1 flex flex-col space-y-8 w-full">
         <!-- Placeholder Card -->
-        <div id="placeholderCard" class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-50 via-white to-slate-50 border border-slate-200/60 shadow-xl shadow-slate-200/20 flex-1 flex flex-col justify-center">
+        <div id="placeholderCard" class="relative overflow-hidden rounded-2xl bg-white border border-slate-200/60 shadow-xl shadow-slate-200/20 flex-1 flex flex-col justify-center">
           <!-- Decorative Background Elements -->
           <div class="absolute inset-0 bg-gradient-to-r from-blue-50/20 via-transparent to-purple-50/20 pointer-events-none"></div>
           <div class="absolute top-0 left-0 w-40 h-40 bg-gradient-to-br from-blue-100/10 to-purple-100/10 rounded-full -translate-y-20 -translate-x-20"></div>
@@ -203,7 +217,7 @@
             
             <!-- Feature Cards -->
             <div class="grid gap-6 sm:grid-cols-3 max-w-4xl mx-auto">
-              <div class="group relative overflow-hidden rounded-2xl bg-white/80 backdrop-blur-sm border border-slate-200/60 p-6 shadow-lg shadow-slate-200/20 hover:shadow-xl hover:shadow-slate-200/30 transition-all duration-300 hover:-translate-y-1">
+              <div class="group relative overflow-hidden rounded-2xl bg-white border border-slate-200/60 p-6 shadow-lg shadow-slate-200/20 hover:shadow-xl hover:shadow-slate-200/30 transition-all duration-300 hover:-translate-y-1">
                 <div class="absolute inset-0 bg-gradient-to-br from-orange-50/50 to-yellow-50/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 <div class="relative">
                   <div class="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-orange-500 to-yellow-500 rounded-2xl mb-4 shadow-lg shadow-orange-500/25">
@@ -214,7 +228,7 @@
               </div>
             </div>
               
-              <div class="group relative overflow-hidden rounded-2xl bg-white/80 backdrop-blur-sm border border-slate-200/60 p-6 shadow-lg shadow-slate-200/20 hover:shadow-xl hover:shadow-slate-200/30 transition-all duration-300 hover:-translate-y-1">
+              <div class="group relative overflow-hidden rounded-2xl bg-white border border-slate-200/60 p-6 shadow-lg shadow-slate-200/20 hover:shadow-xl hover:shadow-slate-200/30 transition-all duration-300 hover:-translate-y-1">
                 <div class="absolute inset-0 bg-gradient-to-br from-emerald-50/50 to-teal-50/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 <div class="relative">
                   <div class="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-2xl mb-4 shadow-lg shadow-emerald-500/25">
@@ -225,7 +239,7 @@
                 </div>
               </div>
               
-              <div class="group relative overflow-hidden rounded-2xl bg-white/80 backdrop-blur-sm border border-slate-200/60 p-6 shadow-lg shadow-slate-200/20 hover:shadow-xl hover:shadow-slate-200/30 transition-all duration-300 hover:-translate-y-1">
+              <div class="group relative overflow-hidden rounded-2xl bg-white border border-slate-200/60 p-6 shadow-lg shadow-slate-200/20 hover:shadow-xl hover:shadow-slate-200/30 transition-all duration-300 hover:-translate-y-1">
                 <div class="absolute inset-0 bg-gradient-to-br from-purple-50/50 to-pink-50/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 <div class="relative">
                   <div class="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl mb-4 shadow-lg shadow-purple-500/25">
@@ -245,7 +259,7 @@
     </div>
   </main>
 
-  <footer class="bg-white mt-auto">
+  <footer class="mt-auto">
     <div class="mx-auto max-w-7xl px-6 py-10 text-sm text-neutral-600">
       <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
         <div class="flex items-center gap-2">
@@ -304,13 +318,27 @@
       e.preventDefault();
 
       const destination = (document.getElementById('destination').value || '').trim();
-      const durationNum = Math.max(1, Math.min(30, parseInt(document.getElementById('duration').value || '0', 10)));
-      const duration = isFinite(durationNum) ? `${durationNum} days` : '3 days';
+      let durationNum = parseInt(document.getElementById('duration').value || '0', 10);
+      
+      // Validate and limit duration
+      if (!isFinite(durationNum) || durationNum < 1) {
+        alert('Please enter a valid duration (1-5 days).');
+        return;
+      }
+      
+      if (durationNum > 5) {
+        alert('🤖 Whoa there, adventurer! 🧠⚡\n\nOur AI is experiencing cognitive overload! This is an MVP, and planning more than 5 days might cause our poor AI to dream in itineraries. 😵‍💫\n\nLet\'s keep it to 5 days max so our AI can stay sane! 🎉');
+        durationNum = 5;
+        // Update the input field to reflect the limit
+        document.getElementById('duration').value = 5;
+      }
+      
+      const duration = `${durationNum} days`;
       const budget = document.getElementById('budgetValue').value || 'moderate';
       const interests = window.interestsList.join(', ');
 
-      if (!destination || !durationNum) {
-        alert('Please enter a destination and duration.');
+      if (!destination) {
+        alert('Please enter a destination.');
         return;
       }
 
@@ -335,7 +363,7 @@
 
       try {
         // Try different ports if the default doesn't work
-        const ports = [8002, 8000, 8001, 8003, 8004, 8005];
+        const ports = [8000, 8001, 8002, 8003, 8004, 8005];
         let resp;
         
         for (const port of ports) {
@@ -385,6 +413,153 @@
         // Parse content to extract days and other sections
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = content;
+        
+        // ✨ CUSTOM HTML STRUCTURE MANIPULATION - Match Mobile App Design
+        // Restructure activities to match the card layout from App.tsx
+        tempDiv.querySelectorAll('ul > li').forEach(li => {
+          // Skip if this is a nested li (info pills or links)
+          if (li.parentElement.parentElement?.tagName === 'LI') return;
+          
+          // Extract components from markdown structure
+          const strong = li.querySelector('strong');
+          const description = Array.from(li.childNodes).find(node => 
+            node.nodeType === Node.TEXT_NODE && node.textContent.trim().startsWith('-')
+          );
+          
+          // Get nested ul for info pills and action links
+          const nestedUl = li.querySelector('ul');
+          let infoPills = [];
+          let actionLinks = [];
+          
+          if (nestedUl) {
+            const nestedItems = Array.from(nestedUl.querySelectorAll('li'));
+            nestedItems.forEach(item => {
+              // Check if it contains links (action buttons)
+              if (item.querySelector('a')) {
+                actionLinks.push(item);
+              } else {
+                // Info pills (cost/duration)
+                infoPills.push(item);
+              }
+            });
+          }
+          
+          // Create new structured card (matching MessageCell structure)
+          const card = document.createElement('div');
+          card.className = 'activity-card';
+          
+          // Frame3 - Title and Description Container
+          const headerContainer = document.createElement('div');
+          headerContainer.className = 'activity-header';
+          
+          if (strong) {
+            const title = document.createElement('p');
+            title.className = 'activity-title';
+            title.innerHTML = strong.innerHTML;
+            headerContainer.appendChild(title);
+          }
+          
+          if (description) {
+            const desc = document.createElement('p');
+            desc.className = 'activity-description';
+            desc.textContent = description.textContent.trim().replace(/^-\s*/, '');
+            headerContainer.appendChild(desc);
+          }
+          
+          card.appendChild(headerContainer);
+          
+          // Frame4 - Info Pills Container (cost/duration)
+          if (infoPills.length > 0) {
+            const pillsContainer = document.createElement('div');
+            pillsContainer.className = 'info-pills-container';
+            
+            infoPills.forEach(pill => {
+              const pillDiv = document.createElement('div');
+              pillDiv.className = 'info-pill';
+              pillDiv.textContent = pill.textContent.trim();
+              pillsContainer.appendChild(pillDiv);
+            });
+            
+            card.appendChild(pillsContainer);
+          }
+          
+          // Frame5 - Action Buttons Container
+          if (actionLinks.length > 0) {
+            const buttonsContainer = document.createElement('div');
+            buttonsContainer.className = 'action-buttons-container';
+            
+            actionLinks.forEach(linkItem => {
+              const links = linkItem.querySelectorAll('a');
+              const itemText = linkItem.textContent || linkItem.innerText || '';
+              
+              links.forEach(link => {
+                const btn = document.createElement('a');
+                btn.href = link.href;
+                btn.target = '_blank';
+                btn.rel = 'noopener noreferrer';
+                btn.className = 'action-button';
+                
+                // Get text around this specific link
+                const linkText = link.textContent || '';
+                const parentText = link.parentElement?.textContent || '';
+                
+                // Extract button label
+                let buttonLabel = 'Link';
+                
+                // Strategy 1: Check if link text itself is clean (not a URL)
+                if (linkText && !linkText.includes('http') && !linkText.includes('www.')) {
+                  buttonLabel = linkText.trim();
+                }
+                // Strategy 2: Extract from markdown pattern before this link [Label](url)
+                else {
+                  const beforeLink = parentText.substring(0, parentText.indexOf(linkText));
+                  const markdownMatch = beforeLink.match(/\[([^\]]+)\]\s*$/);
+                  if (markdownMatch) {
+                    buttonLabel = markdownMatch[1].trim();
+                  }
+                  // Strategy 3: Look for emoji + word pattern before the link
+                  else {
+                    const emojiMatch = itemText.match(/([🗺️📸🎫💳🎟️])\s*\[?([A-Za-z]+)\]?/g);
+                    if (emojiMatch) {
+                      // Find which emoji/word pair matches this link
+                      emojiMatch.forEach(match => {
+                        const labelMatch = match.match(/[🗺️📸🎫💳🎟️]\s*\[?([A-Za-z]+)\]?/);
+                        if (labelMatch) {
+                          const label = labelMatch[1];
+                          // Match label to URL type
+                          if ((label.toLowerCase().includes('direction') || label.toLowerCase() === 'directions') && link.href.includes('maps')) {
+                            buttonLabel = label;
+                          } else if ((label.toLowerCase().includes('photo') || label.toLowerCase() === 'photos') && link.href.includes('unsplash')) {
+                            buttonLabel = label;
+                          } else if ((label.toLowerCase().includes('ticket') || label.toLowerCase() === 'tickets') && link.href.includes('getyourguide')) {
+                            buttonLabel = label;
+                          }
+                        }
+                      });
+                    }
+                    // Strategy 4: Fallback - guess from URL
+                    if (buttonLabel === 'Link') {
+                      if (link.href.includes('maps.google')) buttonLabel = 'Directions';
+                      else if (link.href.includes('getyourguide')) buttonLabel = 'Tickets';
+                      else if (link.href.includes('unsplash.com/s/photos') || link.href.includes('unsplash.com/search/photos')) buttonLabel = 'Photos';
+                      else if (link.href.includes('book')) buttonLabel = 'Book';
+                    }
+                  }
+                }
+                
+                btn.textContent = buttonLabel;
+                buttonsContainer.appendChild(btn);
+              });
+            });
+            
+            card.appendChild(buttonsContainer);
+          }
+          
+          // Replace original li with new card structure
+          li.innerHTML = '';
+          li.appendChild(card);
+          li.classList.add('activity-list-item');
+        });
         
         // Remove background styling from "Welcome to" headings
         const welcomeHeadings = tempDiv.querySelectorAll('h2');
@@ -603,7 +778,7 @@
         }).join('') : '';
         
         results.innerHTML = `
-          <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-white via-slate-50 to-white border border-slate-200/60 shadow-xl shadow-slate-200/20 flex-1 flex flex-col w-full">
+          <div class="relative overflow-hidden rounded-2xl bg-white border border-slate-200/60 shadow-xl shadow-slate-200/20 flex-1 flex flex-col w-full">
             <!-- Decorative Background Elements -->
             <div class="absolute inset-0 bg-gradient-to-r from-blue-50/10 via-transparent to-purple-50/10 pointer-events-none"></div>
             <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-blue-100/5 to-purple-100/5 rounded-full -translate-y-12 translate-x-12"></div>
@@ -696,14 +871,19 @@
                 height: 300px;
                 object-fit: cover;
                 border-radius: 0.75rem;
-                margin: 0;
-                padding: 0;
+                margin: 0 !important;
+                padding: 0 !important;
                 display: block;
                 box-shadow: 0 10px 25px rgba(0,0,0,0.15);
                 transition: transform 0.3s ease;
               }
               .itinerary-content img:hover {
                 transform: scale(1.02);
+              }
+              /* Remove top margin/padding from paragraphs containing images */
+              .itinerary-content p:has(img) {
+                margin-top: 0 !important;
+                padding-top: 0 !important;
               }
               .itinerary-content p { 
                 margin: 1.75rem 0; 
@@ -714,141 +894,172 @@
                 font-weight: 400;
                 letter-spacing: 0.01em;
               }
-              .itinerary-content strong { 
-                font-weight: 600; 
-                color: #1e293b;
-                font-size: 1.05rem;
+              /* Time of day headers - Morning/Afternoon/Evening (Frame1) */
+              .itinerary-content strong {
                 font-family: 'Roboto', sans-serif;
+                font-weight: 700;
+                font-size: 18px;
+                color: #000000;
+                line-height: normal;
                 display: block;
-                margin-bottom: 0.375rem;
-                margin-top: 0;
+                margin: 1.5rem 0 1rem 0;
                 padding: 0;
                 background: none;
-                border-radius: 0;
-                border-left: none;
+                border: none;
                 box-shadow: none;
-                position: relative;
-                overflow: visible;
-                line-height: 1.3;
-                letter-spacing: -0.01em;
               }
+              
+              /* Note: Old markdown-based styles removed - now using structured card components */
               .itinerary-content ul { 
                 margin: 1.5rem 0; 
                 padding-left: 0;
                 list-style: none;
               }
-              .itinerary-content li { 
-                margin: 1rem 0; 
-                padding: 1.25rem 1.5rem;
+              /* Activity List Item - Outer wrapper */
+              .itinerary-content li.activity-list-item { 
+                margin: 1.25rem 0;
+                padding: 0;
+                position: relative;
+                line-height: normal;
+                background: rgba(99, 102, 241, 0.08);
+                border-radius: 20px;
+                border: none;
+                box-shadow: none;
+                transition: all 0.2s ease;
+                font-family: 'Roboto', sans-serif;
+                list-style: none;
+              }
+              .itinerary-content li.activity-list-item:hover {
+                background: rgba(99, 102, 241, 0.12);
+              }
+              .itinerary-content li.activity-list-item:before {
+                content: none;
+              }
+              
+              /* Activity Card - Inner card wrapper (MessageCell) */
+              .activity-card {
+                display: flex;
+                flex-direction: column;
+                gap: 20px;
+                padding: 20px;
+                width: 100%;
+              }
+              
+              /* Activity Header - Title and Description (Frame3) */
+              .activity-header {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+                width: 100%;
+              }
+              
+              .activity-title {
+                font-family: 'Roboto', sans-serif;
+                font-weight: 700 !important;
+                font-size: 18px;
+                color: #000000 !important;
+                margin: 0 !important;
+                line-height: normal;
+              }
+              
+              .activity-description {
+                font-family: 'Roboto', sans-serif;
+                font-weight: 400;
+                font-size: 14px;
+                color: rgba(0, 0, 0, 0.6);
+                margin: 0 !important;
+                line-height: normal;
+              }
+              
+              /* Info Pills Container (Frame4) */
+              .info-pills-container {
+                display: flex;
+                gap: 20px;
+                align-items: center;
+                flex-wrap: wrap;
+                padding-bottom: 9px;
+              }
+              
+              /* Info Pill - White pills for cost/duration (BtnWhite) */
+              .info-pill {
+                background: white;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 10px 20px;
+                border-radius: 10px;
+                font-family: 'Roboto', sans-serif;
+                font-weight: 700;
+                font-size: 14px;
+                color: #000000;
+                white-space: nowrap;
+              }
+              
+              /* Action Buttons Container (Frame5/Frame2) */
+              .action-buttons-container {
+                display: flex;
+                flex-direction: row;
+                gap: 20px;
+                align-items: center;
+                flex-wrap: wrap;
+              }
+              
+              /* Action Button - Indigo buttons (BtnGreen) */
+              .action-button {
+                background: #6366f1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 10px 20px;
+                border-radius: 10px;
+                font-family: 'Roboto', sans-serif;
+                font-weight: 700;
+                font-size: 14px;
+                color: white;
+                text-decoration: none;
+                white-space: nowrap;
+                cursor: pointer;
+                transition: background-color 0.3s ease;
+              }
+              
+              .action-button:hover {
+                background: #4f46e5;
+                color: white;
+              }
+              
+              /* Legacy li styles (for backwards compatibility) */
+              .itinerary-content li:not(.activity-list-item) { 
+                margin: 1.25rem 0; 
+                padding: 1.25rem;
                 position: relative;
                 line-height: 1.6;
                 color: #1e293b;
-                background: #f8f9fc;
-                border-radius: 0.75rem;
+                background: rgba(99, 102, 241, 0.08);
+                border-radius: 1.25rem;
                 border: none;
                 box-shadow: none;
                 transition: all 0.2s ease;
                 font-family: 'Roboto', sans-serif;
                 font-size: 1rem;
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
               }
-              .itinerary-content li:hover {
-                background: #f1f3f9;
+              .itinerary-content li:not(.activity-list-item):hover {
+                background: rgba(99, 102, 241, 0.12);
                 transform: none;
                 box-shadow: none;
               }
-              .itinerary-content li:before {
+              .itinerary-content li:not(.activity-list-item):before {
                 content: none;
               }
-              .itinerary-content a {
-                color: #ffffff;
-                text-decoration: none;
-                font-weight: 500;
-                padding: 0.625rem 1.25rem;
-                border-radius: 0.5rem;
-                transition: all 0.2s ease;
-                display: inline-flex;
-                align-items: center;
-                gap: 0.375rem;
-                background: #6366f1;
-                border: none;
-                font-size: 0.875rem;
-                margin: 0.25rem 0.5rem 0.25rem 0;
-                box-shadow: none;
-                position: relative;
-                overflow: visible;
-                font-family: 'Roboto', sans-serif;
-                letter-spacing: normal;
-                line-height: 1.4;
-                cursor: pointer;
-                white-space: nowrap;
+              /* Legacy link styles for non-card content (sidebar, etc.) */
+              .itinerary-content a:not(.action-button) {
+                color: #6366f1;
+                text-decoration: underline;
               }
-              .itinerary-content a:hover {
-                background: #4f46e5;
-                transform: none;
-                box-shadow: none;
-                color: #ffffff;
-                text-decoration: none;
-              }
-              .itinerary-content a:active {
-                transform: translateY(0);
-                box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-                color: #374151;
-              }
-              
-              /* Specific styling for different action types */
-              .itinerary-content a[href*="maps.google.com"] {
-                background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-                color: white;
-                border-color: #1d4ed8;
-              }
-              .itinerary-content a[href*="maps.google.com"]:hover {
-                background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
-                color: white;
-              }
-              
-              .itinerary-content a[href*="getyourguide.com"] {
-                background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-                color: white;
-                border-color: #059669;
-              }
-              .itinerary-content a[href*="getyourguide.com"]:hover {
-                background: linear-gradient(135deg, #059669 0%, #047857 100%);
-                color: white;
-              }
-              
-              .itinerary-content a[href*="unsplash.com"] {
-                background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-                color: white;
-                border-color: #7c3aed;
-              }
-              .itinerary-content a[href*="unsplash.com"]:hover {
-                background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
-                color: white;
-              }
-              .itinerary-content em {
-                font-style: italic;
-                color: #64748b;
-              }
-              /* Special styling for cost and duration information */
-              .itinerary-content li:has(em) {
-                padding-top: 1.25rem;
-                padding-bottom: 1.5rem;
-              }
-              .itinerary-content li em {
-                display: inline-flex;
-                align-items: center;
-                gap: 0.5rem;
-                background: transparent;
-                padding: 0.375rem 0;
-                border-radius: 0;
-                border: none;
-                font-style: normal;
-                font-weight: 500;
-                color: #64748b;
-                font-size: 0.875rem;
-                margin: 0.5rem 0;
-                box-shadow: none;
-                line-height: 1.4;
+              .itinerary-content a:not(.action-button):hover {
+                color: #4f46e5;
               }
               .itinerary-content code {
                 background: #f1f5f9;
@@ -859,9 +1070,7 @@
                 font-weight: 500;
               }
               .itinerary-content hr {
-                border: none;
-                border-top: 2px dashed #e2e8f0;
-                margin: 2.5rem 0;
+                display: none;
               }
               .itinerary-content blockquote {
                 border-left: 4px solid #fbbf24;
@@ -908,7 +1117,7 @@
               .tab-btn {
                 position: relative;
                 padding: 0.875rem 1.5rem;
-                font-weight: 500;
+                font-weight: 600;
                 font-size: 0.95rem;
                 color: #64748b;
                 background: transparent;
@@ -1023,9 +1232,51 @@
                   margin: 1.5rem 0;
                 }
                 
-                .itinerary-content li {
+                .itinerary-content li.activity-list-item {
+                  margin: 1rem 0;
+                }
+                
+                .activity-card {
+                  gap: 16px;
+                  padding: 16px;
+                }
+                
+                .activity-title {
+                  font-size: 16px;
+                  font-weight: 700 !important;
+                }
+                
+                .activity-description {
+                  font-size: 13px;
+                }
+                
+                .info-pills-container {
+                  gap: 12px;
+                  padding-bottom: 5px;
+                }
+                
+                .info-pill {
+                  padding: 8px 16px;
+                  font-size: 13px;
+                }
+                
+                .action-buttons-container {
+                  gap: 12px;
+                  flex-direction: row;
+                  flex-wrap: wrap;
+                }
+                
+                .action-button {
+                  padding: 10px 16px;
+                  font-size: 13px;
+                  flex: 0 0 auto;
+                }
+                
+                /* Legacy mobile styles */
+                .itinerary-content li:not(.activity-list-item) {
                   font-size: 0.95rem;
-                  padding: 0.875rem 1rem 0.875rem 2rem;
+                  padding: 1rem;
+                  gap: 0.875rem;
                 }
               }
               /* Sidebar specific styles */
@@ -1840,8 +2091,21 @@
              }
            });
 
-           // Make removeInterest globally accessible
-           window.removeInterest = removeInterest;
+          // Make removeInterest globally accessible
+          window.removeInterest = removeInterest;
+
+    // Duration validation on blur and change (immediate feedback)
+    const durationInput = document.getElementById('duration');
+    const validateDuration = (e) => {
+      const value = parseInt(e.target.value || '0', 10);
+      if (value > 5) {
+        alert('🤖 Whoa there, adventurer! 🧠⚡\n\nOur AI is experiencing cognitive overload! This is an MVP, and planning more than 5 days might cause our poor AI to dream in itineraries. 😵‍💫\n\nLet\'s keep it to 5 days max so our AI can stay sane! 🎉');
+        e.target.value = 5;
+      }
+    };
+    
+    durationInput.addEventListener('blur', validateDuration);
+    durationInput.addEventListener('change', validateDuration);
 
     form.addEventListener('submit', submitToBackend);
   </script>

@@ -91,4 +91,4 @@ temp/
 test scripts/*.json
 backend/archive/ 
 
-backend/__pycache__
+backend/__pycache__venv312/

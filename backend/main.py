@@ -13,34 +13,7 @@ from pathlib import Path
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
 
-# Minimal observability via Arize/OpenInference (optional)
-try:
-    from arize.otel import register  # pyright: ignore[reportMissingImports]
-    from openinference.instrumentation.langchain import LangChainInstrumentor
-    from openinference.instrumentation.litellm import LiteLLMInstrumentor
-    from openinference.instrumentation import using_prompt_template, using_metadata, using_attributes
-    from opentelemetry import trace
-    _TRACING = True
-except Exception:
-    def using_prompt_template(**kwargs):  # type: ignore
-        from contextlib import contextmanager
-        @contextmanager
-        def _noop():
-            yield
-        return _noop()
-    def using_metadata(*args, **kwargs):  # type: ignore
-        from contextlib import contextmanager
-        @contextmanager
-        def _noop():
-            yield
-        return _noop()
-    def using_attributes(*args, **kwargs):  # type: ignore
-        from contextlib import contextmanager
-        @contextmanager
-        def _noop():
-            yield
-        return _noop()
-    _TRACING = False
+# No tracing/observability - keeping it simple
 
 # LangGraph + LangChain
 from langgraph.graph import StateGraph, END, START
@@ -612,16 +585,8 @@ def research_agent(state: TripState) -> TripState:
     calls: List[Dict[str, Any]] = []
     tool_results = []
     
-    # Agent metadata and prompt template instrumentation
-    with using_attributes(tags=["research", "info_gathering"]):
-        if _TRACING:
-            current_span = trace.get_current_span()
-            if current_span:
-                current_span.set_attribute("metadata.agent_type", "research")
-                current_span.set_attribute("metadata.agent_node", "research_agent")
-        
-        with using_prompt_template(template=prompt_t, variables=vars_, version="v1"):
-            res = agent.invoke(messages)
+    # Research agent execution
+    res = agent.invoke(messages)
     
     # Collect tool calls and execute them
     if getattr(res, "tool_calls", None):
@@ -639,10 +604,8 @@ def research_agent(state: TripState) -> TripState:
         synthesis_prompt = "Based on the above information, provide a comprehensive summary for the traveler."
         messages.append(SystemMessage(content=synthesis_prompt))
         
-        # Instrument synthesis LLM call with its own prompt template
-        synthesis_vars = {"destination": destination, "context": "tool_results"}
-        with using_prompt_template(template=synthesis_prompt, variables=synthesis_vars, version="v1-synthesis"):
-            final_res = llm.invoke(messages)
+        # Synthesis step
+        final_res = llm.invoke(messages)
         out = final_res.content
     else:
         out = res.content
@@ -667,16 +630,8 @@ def budget_agent(state: TripState) -> TripState:
     
     calls: List[Dict[str, Any]] = []
     
-    # Agent metadata and prompt template instrumentation
-    with using_attributes(tags=["budget", "cost_analysis"]):
-        if _TRACING:
-            current_span = trace.get_current_span()
-            if current_span:
-                current_span.set_attribute("metadata.agent_type", "budget")
-                current_span.set_attribute("metadata.agent_node", "budget_agent")
-        
-        with using_prompt_template(template=prompt_t, variables=vars_, version="v1"):
-            res = agent.invoke(messages)
+    # Budget agent execution
+    res = agent.invoke(messages)
     
     if getattr(res, "tool_calls", None):
         for c in res.tool_calls:
@@ -692,10 +647,8 @@ def budget_agent(state: TripState) -> TripState:
         synthesis_prompt = f"Create a detailed budget breakdown for {duration} in {destination} with a {budget} budget."
         messages.append(SystemMessage(content=synthesis_prompt))
         
-        # Instrument synthesis LLM call
-        synthesis_vars = {"duration": duration, "destination": destination, "budget": budget}
-        with using_prompt_template(template=synthesis_prompt, variables=synthesis_vars, version="v1-synthesis"):
-            final_res = llm.invoke(messages)
+        # Synthesis step
+        final_res = llm.invoke(messages)
         out = final_res.content
     else:
         out = res.content
@@ -747,18 +700,8 @@ def local_agent(state: TripState) -> TripState:
     
     calls: List[Dict[str, Any]] = []
     
-    # Agent metadata and prompt template instrumentation
-    with using_attributes(tags=["local", "local_experiences"]):
-        if _TRACING:
-            current_span = trace.get_current_span()
-            if current_span:
-                current_span.set_attribute("metadata.agent_type", "local")
-                current_span.set_attribute("metadata.agent_node", "local_agent")
-                if ENABLE_RAG and context_text:
-                    current_span.set_attribute("metadata.rag_enabled", "true")
-        
-        with using_prompt_template(template=prompt_t, variables=vars_, version="v1"):
-            res = agent.invoke(messages)
+    # Local agent execution
+    res = agent.invoke(messages)
     
     if getattr(res, "tool_calls", None):
         for c in res.tool_calls:
@@ -774,10 +717,8 @@ def local_agent(state: TripState) -> TripState:
         synthesis_prompt = f"Create a curated list of authentic experiences for someone interested in {interests} with a {travel_style} approach."
         messages.append(SystemMessage(content=synthesis_prompt))
         
-        # Instrument synthesis LLM call
-        synthesis_vars = {"interests": interests, "travel_style": travel_style, "destination": destination}
-        with using_prompt_template(template=synthesis_prompt, variables=synthesis_vars, version="v1-synthesis"):
-            final_res = llm.invoke(messages)
+        # Synthesis step
+        final_res = llm.invoke(messages)
         out = final_res.content
     else:
         out = res.content
@@ -798,6 +739,11 @@ def itinerary_agent(state: TripState) -> TripState:
     try:
         duration_str = duration.lower().replace("days", "").replace("day", "").strip()
         duration_num = int(duration_str) if duration_str.isdigit() else 1
+        # LIMIT TO MAXIMUM 5 DAYS
+        if duration_num > 5:
+            duration_num = 5
+            duration = "5 days"
+            print(f"⚠️ Duration limited to maximum 5 days")
     except:
         duration_num = 1
     
@@ -814,15 +760,20 @@ def itinerary_agent(state: TripState) -> TripState:
         "4. ACTION ITEMS - After each activity, add action links with destination context:",
         f"   - 🗺️ [Directions](https://maps.google.com/?q=ACTUAL_PLACE_NAME+{destination})",
         f"   - 🎫 [Tickets](https://www.getyourguide.com/s/?q=ACTUAL_PLACE_NAME+{destination})",
-        f"   - 📸 [Photos](https://unsplash.com/search/photos/ACTUAL_PLACE_NAME+{destination})",
+        "   - 📸 [Photos](https://unsplash.com/s/photos/ACTUAL_PLACE_NAME_LOWERCASE_WITH_HYPHENS)",
         "   CRITICAL: Replace ACTUAL_PLACE_NAME with the REAL, SPECIFIC place name from the activity above",
+        "   CRITICAL FOR PHOTOS: Convert place name to lowercase and replace spaces with hyphens (e.g., 'Louvre Museum' → 'louvre-museum')",
         "   EXAMPLES: 'Eiffel Tower', 'Colosseum', 'Sagrada Familia', 'Louvre Museum', 'Times Square'",
         "",
         "STRUCTURE:",
         "## Welcome to {destination}",
         "Start with a brief, engaging introduction about {destination} - highlight what makes it special, its unique character, and why it's worth visiting. Include 2-3 key highlights that set the destination apart.",
         "",
-        "IMPORTANT: Create EXACTLY the number of days specified in the duration. If duration is '7 days', create Day 1, Day 2, Day 3, Day 4, Day 5, Day 6, Day 7.",
+        "",
+        "🚨 CRITICAL DAY COUNT REQUIREMENT 🚨:",
+        f"You MUST create EXACTLY {duration_num} days. Count them: {', '.join([f'Day {d}' for d in range(1, duration_num + 1)])}",
+        f"If you generate less than {duration_num} days, the itinerary is INCOMPLETE and REJECTED.",
+        f"VERIFICATION: After writing, count your days. You should have {duration_num} sections starting with '### Day X:'",
         "",
         "STRUCTURE FOR EACH DAY:",
         "### Day X: [Short Theme - e.g., 'Historic Heart', 'Cultural Gems', 'Local Flavors', 'Nature & Parks', 'Art & Museums', 'Food & Markets', 'Nightlife & Entertainment']",
@@ -830,18 +781,18 @@ def itinerary_agent(state: TripState) -> TripState:
         "![Day X](IMAGE_URL_PLACEHOLDER_DAY_X)",
         "",
         "**☀️ Morning**",
-        "- 🏛️ **[REAL ATTRACTION NAME]** - Brief 1-line description",
-        "  - 💶 Cost | ⏱️ 2 hours",
+        "- 🏛️ **[REAL ATTRACTION NAME]** - Detailed description MINIMUM 150 characters (up to 200 characters) explaining what makes this place special, unique features, and what visitors can expect to experience",
+        "  - 💵 $15-25 | ⏱️ 2 hours",
         "  - 🗺️ [Directions](https://maps.google.com/?q=REAL_ATTRACTION_NAME+{destination}) | 🎫 [Tickets](https://www.getyourguide.com/s/?q=REAL_ATTRACTION_NAME+{destination})",
         "",
         "**🌤️ Afternoon**",
-        "- 🍝 **[REAL RESTAURANT NAME]** - Brief description",
-        "  - 💶 Cost | ⏱️ Duration",
-        "  - 🗺️ [Directions](https://maps.google.com/?q=REAL_RESTAURANT_NAME+{destination}) | 📸 [Photos](https://unsplash.com/search/photos/REAL_RESTAURANT_NAME+{destination})",
+        "- 🍝 **[REAL RESTAURANT NAME]** - Detailed description MINIMUM 150 characters (up to 200 characters) highlighting cuisine type, signature dishes, ambiance, and why it's worth visiting for food lovers",
+        "  - 💵 $20-40 | ⏱️ 1.5 hours",
+        f"  - 🗺️ [Directions](https://maps.google.com/?q=REAL_RESTAURANT_NAME+{destination}) | 📸 [Photos](https://unsplash.com/s/photos/real-restaurant-name-paris)",
         "",
         "**🌆 Evening**",
-        "- 🌆 **[REAL EVENING ACTIVITY NAME]** - Brief description",
-        "  - 💶 Cost | ⏱️ Duration",
+        "- 🌆 **[REAL EVENING ACTIVITY NAME]** - Detailed description MINIMUM 150 characters (up to 200 characters) describing the atmosphere, what activities are available, and what makes this evening spot memorable",
+        "  - 💵 $25-50 | ⏱️ 2-3 hours",
         "  - 🗺️ [Directions](https://maps.google.com/?q=REAL_EVENING_ACTIVITY+{destination}) | 🎫 [Tickets](https://www.getyourguide.com/s/?q=REAL_EVENING_ACTIVITY+{destination})",
         "",
         "---",
@@ -859,17 +810,70 @@ def itinerary_agent(state: TripState) -> TripState:
         "- Replace REAL_EVENING_ACTIVITY with the actual activity name from the activity above",
         "- CRITICAL: The place name in the link MUST match the place name in the activity title",
         "",
+        "📝 CRITICAL DESCRIPTION LENGTH REQUIREMENT:",
+        "- ⚠️ ABSOLUTE MINIMUM: Each activity description MUST be at least 150 characters (count the characters!)",
+        "- IDEAL RANGE: 160-200 characters for optimal detail",
+        "- ❌ ANY description under 150 characters is REJECTED and UNACCEPTABLE",
+        "- ❌ REJECTED: Short descriptions like 'Visit X' or 'See Y' or 'Explore Z' (TOO SHORT!)",
+        "- ✅ REQUIRED: Detailed, engaging descriptions that explain WHY the place is special",
+        "- Descriptions should be detailed and informative, not brief one-liners",
+        "- Include specific details about what makes the place special, unique features, atmosphere, or what visitors can expect",
+        "- Example PERFECT description (180 chars): 'Marvel at Gaudí's unfinished masterpiece featuring intricate facades, colorful stained glass, and towering spires. A UNESCO World Heritage site that blends Gothic and Art Nouveau styles.'",
+        "- Example BAD description (too short): 'Visit Gaudí's famous church' (only 28 chars - TOO SHORT! REJECTED!)",
+        "- ✅ Before you write each description, COUNT the characters to ensure it meets the 150+ character minimum",
+        "- ✅ Write 2-3 full sentences for each activity description",
+        "",
+        "💵 CRITICAL COST ESTIMATION REQUIREMENT (REALISTIC USD PRICES):",
+        "- ALL costs MUST be in USD with realistic price ranges based on actual market prices",
+        "- Use ACTUAL NUMBERS format: 💵 $15-25, 💵 $30-50, 💵 $8-12",
+        "- ❌ NEVER use placeholders like: $$, $XX-YY, $X-Y, Varies, TBD, Cost",
+        "- ❌ REJECTED: Any response with generic cost placeholders will be REJECTED",
+        "- ✅ REQUIRED: Every activity MUST have a specific USD price range with real numbers",
+        "- Research typical prices for the specific activity type and destination",
+        "",
+        "PRICE GUIDELINES BY ACTIVITY TYPE:",
+        "Museums/Attractions:",
+        "  - Free attractions (parks, churches, viewpoints): 💵 Free",
+        "  - Small museums/local sites: 💵 $5-15",
+        "  - Major museums/attractions: 💵 $15-30",
+        "  - Premium experiences (skip-the-line, guided tours): 💵 $30-60",
+        "",
+        "Restaurants/Meals:",
+        "  - Street food/casual cafes: 💵 $8-15",
+        "  - Mid-range restaurants: 💵 $20-40",
+        "  - Upscale dining: 💵 $50-100",
+        "  - Fine dining/Michelin stars: 💵 $100-200",
+        "",
+        "Evening Activities:",
+        "  - Free activities (sunset walks, night markets): 💵 Free",
+        "  - Shows/performances: 💵 $25-60",
+        "  - Bars/clubs entry: 💵 $10-30",
+        "  - Special experiences (rooftop bars, boat tours): 💵 $30-80",
+        "",
+        "⚠️ ADJUST for destination cost of living:",
+        "  - Budget destinations (Southeast Asia, Eastern Europe): -30-50% from base prices",
+        "  - Mid-range destinations (Southern Europe, Latin America): Use base prices",
+        "  - Expensive destinations (Western Europe, Japan, Scandinavia): +30-50% from base prices",
+        "  - Premium destinations (Switzerland, Iceland, Monaco): +50-100% from base prices",
+        "",
+        "✅ Examples of GOOD cost estimates:",
+        "  - 'Louvre Museum, Paris' → 💵 $18-22 (major museum in expensive city)",
+        "  - 'Pho street vendor, Hanoi' → 💵 $2-4 (street food in budget destination)",
+        "  - 'Tapas bar, Barcelona' → 💵 $15-30 (casual dining in mid-range city)",
+        "  - 'Tokyo Skytree' → 💵 $25-35 (premium attraction in expensive city)",
+        "",
         "CRITICAL LINK FORMAT:",
-        "- Use EXACTLY this format for photo links: https://unsplash.com/search/photos/[PLACE_NAME]+{destination}",
-        "- NEVER use the old format: https://unsplash.com/s/photos/",
-        "- Example: https://unsplash.com/search/photos/Colosseum+Rome",
+        "- Use EXACTLY this format for photo links: https://unsplash.com/s/photos/[place-name-lowercase-with-hyphens]",
+        "- Convert place names to lowercase and replace spaces with hyphens",
+        "- Example: 'Colosseum Rome' → https://unsplash.com/s/photos/colosseum-rome",
+        "- Example: 'Louvre Museum Paris' → https://unsplash.com/s/photos/louvre-museum-paris",
         "",
         "CONCRETE EXAMPLE:",
         "If the activity is: - 🏛️ **Sagrada Familia** - Visit Gaudi's masterpiece",
         "Then the links should be:",
-        "  - 🗺️ [Directions](https://maps.google.com/?q=Sagrada+Familia+{destination})",
-        "  - 🎫 [Tickets](https://www.getyourguide.com/s/?q=Sagrada+Familia+{destination})",
-        "  - 📸 [Photos](https://unsplash.com/search/photos/Sagrada+Familia+{destination})",
+        f"  - 🗺️ [Directions](https://maps.google.com/?q=Sagrada+Familia+{destination})",
+        f"  - 🎫 [Tickets](https://www.getyourguide.com/s/?q=Sagrada+Familia+{destination})",
+        "  - 📸 [Photos](https://unsplash.com/s/photos/sagrada-familia-barcelona)",
         "IMPORTANT: Each day MUST have its own image placed immediately after the day header. Follow this exact structure:",
         "### Day X: [Theme]",
         "",
@@ -908,6 +912,18 @@ def itinerary_agent(state: TripState) -> TripState:
         "Research: {research}",
         "Budget: {budget}",
         "Local: {local}",
+        "",
+        "🚨 FINAL QUALITY CHECK BEFORE SUBMITTING:",
+        "1. ✅ Every activity has a description with AT LEAST 150 characters",
+        "2. ✅ Every activity has a SPECIFIC USD price (e.g., 💵 $15-25) - NO PLACEHOLDERS",
+        "3. ✅ All place names are SPECIFIC and REAL (no generic names)",
+        "4. ✅ All Unsplash photo links use correct format with lowercase and hyphens",
+        "5. ✅ Generated EXACTLY {duration_num} days with complete Morning, Afternoon, and Evening sections",
+        "",
+        "⛔ DO NOT SUBMIT if any activity has:",
+        "- Generic costs like $$, $XX-YY, Varies, TBD, or Cost",
+        "- Short descriptions under 150 characters",
+        "- Generic names like 'Restaurant' or 'Museum'",
     ]
     if user_input:
         prompt_parts.append("User input: {user_input}")
@@ -925,21 +941,8 @@ def itinerary_agent(state: TripState) -> TripState:
         "user_input": user_input,
     }
     
-    # Add span attributes for better observability in Arize
-    # NOTE: using_attributes must be OUTER context for proper propagation
-    with using_attributes(tags=["itinerary", "final_agent"]):
-        if _TRACING:
-            current_span = trace.get_current_span()
-            if current_span:
-                current_span.set_attribute("metadata.itinerary", "true")
-                current_span.set_attribute("metadata.agent_type", "itinerary")
-                current_span.set_attribute("metadata.agent_node", "itinerary_agent")
-                if user_input:
-                    current_span.set_attribute("metadata.user_input", user_input)
-        
-        # Prompt template wrapper for Arize Playground integration
-        with using_prompt_template(template=prompt_t, variables=vars_, version="v1"):
-            res = llm.invoke([SystemMessage(content=prompt_t.format(**vars_))])
+    # Itinerary agent execution
+    res = llm.invoke([SystemMessage(content=prompt_t.format(**vars_))])
     
     # Process the content to replace image placeholders with real city images
     content = res.content
@@ -952,40 +955,99 @@ def itinerary_agent(state: TripState) -> TripState:
             missing_days.append(day)
     
     if missing_days:
-        print(f"⚠️ Missing days detected: {missing_days}")
-        # Add missing days with basic structure
-        for day in missing_days:
-            day_theme = f"Day {day} Activities"
-            missing_day_content = f"""
+        print(f"⚠️ Missing days detected: {missing_days}. Attempting retry...")
+        
+        # RETRY: Generate missing days with focused prompt
+        retry_prompt = f"""You are creating an itinerary for {destination} for {duration_num} days.
+You already generated some days, but Days {', '.join(map(str, missing_days))} are MISSING.
 
-### Day {day}: {day_theme}
+CRITICAL: Generate ONLY these specific days: {', '.join([f'Day {d}' for d in missing_days])}
+
+EXACT FORMAT for EACH missing day:
+
+### Day X: [Creative Theme]
+
+![Day X](IMAGE_URL_PLACEHOLDER_DAY_X)
+
+**☀️ Morning**
+- 🏛️ **[Specific Attraction]** - Detailed description MINIMUM 150 characters (up to 200 chars) explaining what makes this special
+  - 💵 $15-30 | ⏱️ 2-3 hours  
+  - 🗺️ [Directions](https://maps.google.com/?q=Attraction+{destination}) | 🎫 [Tickets](https://www.getyourguide.com/s/?q=Attraction+{destination})
+
+**🌤️ Afternoon**
+- 🍝 **[Specific Restaurant]** - Detailed description MINIMUM 150 characters (up to 200 chars) explaining cuisine, dishes, and atmosphere
+  - 💵 $20-45 | ⏱️ 1-2 hours
+  - 🗺️ [Directions](https://maps.google.com/?q=Restaurant+{destination}) | 📸 [Photos](https://unsplash.com/s/photos/restaurant-{destination.lower().replace(' ', '-')})
+
+**🌆 Evening**
+- 🎭 **[Specific Activity]** - Detailed description MINIMUM 150 characters (up to 200 chars) describing the experience and what to expect
+  - 💵 $25-50 | ⏱️ 2-3 hours
+  - 🗺️ [Directions](https://maps.google.com/?q=Activity+{destination}) | 🎫 [Tickets](https://www.getyourguide.com/s/?q=Activity+{destination})
+
+---
+
+⚠️ CRITICAL: ALL activity descriptions MUST be at least 150 characters. Count them!
+⚠️ CRITICAL: ALL costs MUST be realistic USD prices with ACTUAL NUMBERS (💵 $15-25, NOT $XX-YY or $$)!
+⚠️ CRITICAL: Research actual prices for {destination} - NO PLACEHOLDERS ALLOWED!
+
+Context: {vars_['research'][:200]}
+Local tips: {vars_['local'][:200]}
+
+MUST GENERATE: {len(missing_days)} day(s) - {', '.join([f'Day {d}' for d in missing_days])}"""
+
+        try:
+            print(f"🔄 Retrying to generate days: {missing_days}")
+            retry_res = llm.invoke([SystemMessage(content=retry_prompt)])
+            retry_content = retry_res.content
+            
+            # Verify retry success
+            still_missing = [d for d in missing_days if f"### Day {d}:" not in retry_content]
+            
+            if not still_missing:
+                # Success! Insert retry content
+                budget_pos = content.find("## 💰 Budget Snapshot")
+                if budget_pos != -1:
+                    content = content[:budget_pos] + "\n\n" + retry_content + "\n\n" + content[budget_pos:]
+                else:
+                    content += "\n\n" + retry_content
+                print(f"✅ Retry successful! Generated missing days: {missing_days}")
+            else:
+                print(f"⚠️ Retry partial success. Still missing: {still_missing}")
+                raise Exception(f"Still missing days: {still_missing}")
+                
+        except Exception as e:
+            # Fallback: Use basic template
+            print(f"⚠️ Retry failed: {e}. Using fallback template for: {missing_days}")
+            for day in missing_days:
+                missing_day_content = f"""
+
+### Day {day}: Explore {destination}
 
 ![Day {day}](IMAGE_URL_PLACEHOLDER_DAY_{day})
 
-**Morning** ☀️
-- 🏛️ **[Local Attraction]** - Explore local highlights
-  - 💶 Cost varies | ⏱️ 2-3 hours
-  - 🗺️ [Directions](https://maps.google.com/?q=Local+Attraction+{destination}) | 🎫 [Tickets](https://www.getyourguide.com/s/?q=Local+Attraction+{destination})
+**☀️ Morning**
+- 🏛️ **Local Highlights** - Discover the fascinating treasures and iconic landmarks that make {destination} unique. Explore historical sites, architectural wonders, and cultural hotspots that showcase the city's rich heritage and vibrant character. Perfect for photography enthusiasts and history lovers alike.
+  - 💵 $15-30 | ⏱️ 2-3 hours
+  - 🗺️ [Directions](https://maps.google.com/?q={destination}+attractions) | 🎫 [Tickets](https://www.getyourguide.com/s/?q={destination})
 
-**Afternoon** 🌤️
-- 🍝 **[Local Restaurant]** - Local dining experience
-  - 💶 Cost varies | ⏱️ 1-2 hours
-  - 🗺️ [Directions](https://maps.google.com/?q=Local+Restaurant+{destination}) | 📸 [Photos](https://unsplash.com/search/photos/Local+Restaurant+{destination})
+**🌤️ Afternoon**
+- 🍝 **Traditional Cuisine** - Savor authentic local flavors and traditional dishes that define {destination}'s culinary scene. Experience the unique tastes, fresh ingredients, and time-honored cooking techniques that make this destination a food lover's paradise. Enjoy regional specialties in a welcoming atmosphere.
+  - 💵 $20-45 | ⏱️ 1-2 hours
+  - 🗺️ [Directions](https://maps.google.com/?q={destination}+restaurants) | 📸 [Photos](https://unsplash.com/s/photos/{destination.lower().replace(' ', '-')}-food)
 
-**Evening** 🌆
-- 🌆 **[Local Activity]** - Evening entertainment
-  - 💶 Cost varies | ⏱️ 2-3 hours
-  - 🗺️ [Directions](https://maps.google.com/?q=Local+Activity+{destination}) | 🎫 [Tickets](https://www.getyourguide.com/s/?q=Local+Activity+{destination})
+**🌆 Evening**
+- 🎭 **Cultural Experience** - Experience {destination} by night with its vibrant entertainment scene, illuminated landmarks, and lively atmosphere. Discover local nightlife, evening performances, or simply stroll through beautifully lit streets while soaking in the city's unique after-dark charm and energy.
+  - 💵 $25-50 | ⏱️ 2-3 hours
+  - 🗺️ [Directions](https://maps.google.com/?q={destination}+nightlife) | 🎫 [Tickets](https://www.getyourguide.com/s/?q={destination})
 
 ---
 """
-            # Insert missing day content before the budget section
-            budget_pos = content.find("## 💰 Budget Snapshot")
-            if budget_pos != -1:
-                content = content[:budget_pos] + missing_day_content + content[budget_pos:]
-            else:
-                content += missing_day_content
-            print(f"✅ Added missing Day {day} content")
+                budget_pos = content.find("## 💰 Budget Snapshot")
+                if budget_pos != -1:
+                    content = content[:budget_pos] + missing_day_content + content[budget_pos:]
+                else:
+                    content += missing_day_content
+                print(f"✅ Added fallback content for Day {day}")
 
     # Replace image placeholders with actual city images
     for day in range(1, duration_num + 1):
@@ -1012,13 +1074,54 @@ def itinerary_agent(state: TripState) -> TripState:
                 content = content.replace(day_header, day_header + image_markdown)
                 print(f"✅ Added {destination} {theme} image for Day {day}")
     
-    # Fix Unsplash URLs - replace old format with new format
-    content = content.replace("https://unsplash.com/s/photos/", "https://unsplash.com/search/photos/")
+    # Fix Unsplash URLs - ensure correct format (keep /s/photos/ format)
+    # Note: /s/photos/ is the correct working format, not /search/photos/
+    
+    # Convert Unsplash URLs from + signs to hyphens
+    import re
+    
+    def fix_unsplash_url(match):
+        """Convert Unsplash URLs to use hyphens instead of plus signs"""
+        url = match.group(0)
+        # Handle both /s/photos/ and /search/photos/ formats
+        if '/s/photos/' in url:
+            base = 'https://unsplash.com/s/photos/'
+            path = url.split('/s/photos/')[-1].rstrip(')')
+        elif '/search/photos/' in url:
+            base = 'https://unsplash.com/s/photos/'
+            path = url.split('/search/photos/')[-1].rstrip(')')
+        else:
+            return url
+        
+        # Convert to lowercase and replace + with -
+        path = path.lower().replace('+', '-')
+        return f'{base}{path}'
+    
+    # Fix all Unsplash URLs in content (both formats)
+    content = re.sub(r'https://unsplash\.com/(?:s|search)/photos/[^\s\)]+', fix_unsplash_url, content)
+    
+    # Extra pass: catch any remaining /search/photos/ URLs
+    content = content.replace('unsplash.com/search/photos/', 'unsplash.com/s/photos/')
+    
+    # Extra pass: fix any + signs in Unsplash URLs that might have been missed
+    def replace_plus_in_unsplash(match):
+        url = match.group(0)
+        if '+' in url:
+            parts = url.split('/s/photos/')
+            if len(parts) == 2:
+                fixed_path = parts[1].lower().replace('+', '-')
+                return f'https://unsplash.com/s/photos/{fixed_path}'
+        return url
+    
+    content = re.sub(r'https://unsplash\.com/s/photos/[^\s\)]+', replace_plus_in_unsplash, content)
+    
+    # Debug: Count fixed URLs
+    unsplash_urls = re.findall(r'https://unsplash\.com/s/photos/[^\s\)]+', content)
+    if unsplash_urls:
+        print(f"🔍 Unsplash URLs after fix: {unsplash_urls[:3]}...")  # Show first 3
     
     # Post-process to fix generic placeholders in action links
     try:
-        import re
-        
         # Fix generic placeholders in Google Maps links
         maps_pattern = r'https://maps\.google\.com/\?q=([^+]+)\+([^)]+)'
         def fix_maps_link(match):
@@ -1121,6 +1224,34 @@ def serve_cities():
     return {"error": "cities.json not found"}
 
 
+@app.get("/api/background-image")
+def get_background_image():
+    """Get a random travel background image from Unsplash"""
+    try:
+        unsplash_access_key = os.getenv("UNSPLASH_API_KEY")
+        if unsplash_access_key:
+            # Use official Unsplash API
+            url = "https://api.unsplash.com/photos/random"
+            params = {
+                "query": "travel destination landscape",
+                "orientation": "landscape",
+                "client_id": unsplash_access_key
+            }
+            response = requests.get(url, params=params, timeout=5)
+            if response.status_code == 200:
+                data = response.json()
+                image_url = data.get("urls", {}).get("full", data.get("urls", {}).get("regular"))
+                if image_url:
+                    return {"url": image_url}
+        
+        # Fallback to a reliable placeholder service
+        return {"url": "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1920&h=1080&fit=crop"}
+    except Exception as e:
+        print(f"Error fetching background image: {e}")
+        # Fallback image
+        return {"url": "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1920&h=1080&fit=crop"}
+
+
 @app.get("/api/cities")
 async def search_cities(q: str = ""):
     """
@@ -1173,17 +1304,7 @@ def health():
     return {"status": "healthy", "service": "ai-trip-planner"}
 
 
-# Initialize tracing once at startup, not per request
-if _TRACING:
-    try:
-        space_id = os.getenv("ARIZE_SPACE_ID")
-        api_key = os.getenv("ARIZE_API_KEY")
-        if space_id and api_key:
-            tp = register(space_id=space_id, api_key=api_key, project_name="ai-trip-planner")
-            LangChainInstrumentor().instrument(tracer_provider=tp, include_chains=True, include_agents=True, include_tools=True)
-            LiteLLMInstrumentor().instrument(tracer_provider=tp, skip_dep_check=True)
-    except Exception:
-        pass
+# No tracing initialization - keeping it simple
 
 @app.post("/plan-trip", response_model=TripResponse)
 def plan_trip(req: TripRequest):
@@ -1197,64 +1318,65 @@ def plan_trip(req: TripRequest):
         "tool_calls": [],
     }
     
-    # Add session and user tracking attributes to the trace
-    session_id = req.session_id
-    user_id = req.user_id
-    turn_idx = req.turn_index
-    
-    # Build attributes for session and user tracking
-    attrs_kwargs = {}
-    if session_id:
-        attrs_kwargs["session_id"] = session_id
-    if user_id:
-        attrs_kwargs["user_id"] = user_id
-    
-    # Add turn_index as a custom span attribute if provided
-    if turn_idx is not None and _TRACING:
-        with using_attributes(**attrs_kwargs):
-            current_span = trace.get_current_span()
-            if current_span:
-                current_span.set_attribute("turn_index", turn_idx)
-            out = graph.invoke(state)
-    else:
-        with using_attributes(**attrs_kwargs):
-            out = graph.invoke(state)
+    # Execute the graph
+    out = graph.invoke(state)
     
     # Fix Unsplash URLs in final result
     final_result = out.get("final", "")
     if final_result:
-        # Count old format URLs
-        old_count = final_result.count("https://unsplash.com/s/photos/")
+        import re
         
-        # Replace old format with new format
-        final_result = final_result.replace("https://unsplash.com/s/photos/", "https://unsplash.com/search/photos/")
+        def fix_unsplash_url_final(match):
+            """Convert Unsplash URLs to use hyphens instead of plus signs"""
+            url = match.group(0)
+            # Handle both /s/photos/ and /search/photos/ formats
+            if '/s/photos/' in url:
+                base = 'https://unsplash.com/s/photos/'
+                path = url.split('/s/photos/')[-1].rstrip(')')
+            elif '/search/photos/' in url:
+                base = 'https://unsplash.com/s/photos/'
+                path = url.split('/search/photos/')[-1].rstrip(')')
+            else:
+                return url
+            
+            # Convert to lowercase and replace + with -
+            path = path.lower().replace('+', '-')
+            return f'{base}{path}'
         
-        # Also handle any URLs without https:// prefix
-        final_result = final_result.replace("unsplash.com/s/photos/", "unsplash.com/search/photos/")
+        # Fix all Unsplash URLs (convert + to - and use /s/photos/ format)
+        final_result = re.sub(r'https://unsplash\.com/(?:s|search)/photos/[^\s\)]+', fix_unsplash_url_final, final_result)
         
-        new_count = final_result.count("https://unsplash.com/search/photos/")
-        if old_count > 0:
-            print(f"🔧 Fixed {old_count} Unsplash URLs from old format to new format")
+        # Extra pass: catch any remaining /search/photos/ URLs
+        final_result = final_result.replace('unsplash.com/search/photos/', 'unsplash.com/s/photos/')
+        
+        # Extra pass: fix any + signs in Unsplash URLs
+        def replace_plus_final(match):
+            url = match.group(0)
+            if '+' in url:
+                parts = url.split('/s/photos/')
+                if len(parts) == 2:
+                    fixed_path = parts[1].lower().replace('+', '-')
+                    return f'https://unsplash.com/s/photos/{fixed_path}'
+            return url
+        
+        final_result = re.sub(r'https://unsplash\.com/s/photos/[^\s\)]+', replace_plus_final, final_result)
+        
+        unsplash_count = final_result.count("https://unsplash.com/s/photos/")
+        # Show sample URLs for debugging
+        sample_urls = re.findall(r'https://unsplash\.com/s/photos/[^\s\)]+', final_result)
+        if unsplash_count > 0:
+            print(f"✅ Fixed {unsplash_count} Unsplash URLs")
+            if sample_urls:
+                print(f"   Sample: {sample_urls[0]}")
     
     return TripResponse(result=final_result, tool_calls=out.get("tool_calls", []))
 
 
 if __name__ == "__main__":
     import uvicorn
-    import socket
     
-    def find_free_port(start_port=8000, max_port=8010):
-        """Find a free port starting from start_port"""
-        for port in range(start_port, max_port):
-            try:
-                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                    s.bind(('localhost', port))
-                    return port
-            except OSError:
-                continue
-        raise RuntimeError(f"No free port found between {start_port} and {max_port}")
-    
-    # Find a free port
-    port = find_free_port()
-    print(f"🚀 Starting backend on port {port}")
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    # Always use port 8000 (no auto port switching)
+    PORT = 8000
+    print(f"🚀 Starting backend on port {PORT}")
+    print(f"📍 URL: http://localhost:{PORT}")
+    uvicorn.run(app, host="0.0.0.0", port=PORT)

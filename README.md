@@ -7,8 +7,8 @@ A **production-ready multi-agent system** built for learning and customization. 
 - 🤖 **Multi-Agent Orchestration**: 4 specialized agents running in parallel using LangGraph
 - 🔍 **RAG (Retrieval-Augmented Generation)**: Vector search over curated data with fallback strategies
 - 🌐 **API Integration**: Real-time web search with graceful degradation (LLM fallback)
-- 📊 **Observability**: Production tracing with Arize for debugging and evaluation
 - 🛠️ **Composable Architecture**: Easily adapt from "trip planner" to your own agent system
+- 🎨 **Modern UI/UX**: Beautiful, responsive interface with Tailwind CSS
 
 **Perfect for:** Students learning to build, evaluate, and deploy agentic AI systems.
 
@@ -113,8 +113,6 @@ A **production-ready multi-agent system** built for learning and customization. 
                     │   + Day Images          │
                     │   + Action Buttons      │
                     └─────────────────────────┘
-
-All agents, tools, and LLM calls → Arize Observability Platform
 ```
 
 ## Learning Paths
@@ -122,12 +120,12 @@ All agents, tools, and LLM calls → Arize Observability Platform
 ### 🎓 Beginner Path
 1. **Setup & Run** (15 min)
    - Clone repo, configure `.env` with OpenAI key
-   - Start server: `./start.sh`
-   - Test API: `python "test scripts/test_api.py"`
+   - Start server: `./start.sh` or `npm start`
+   - Test in browser: `http://localhost:8000`
 
 2. **Observe & Understand** (30 min)
    - Make a few trip planning requests
-   - View traces in Arize dashboard
+   - Check terminal output for agent execution logs
    - Understand agent execution flow and tool calls
 
 3. **Experiment with Prompts** (30 min)
@@ -165,7 +163,7 @@ All agents, tools, and LLM calls → Arize Observability Platform
 3. **Implement Evaluations** (2 hours)
    - Use `test scripts/synthetic_data_gen.py` as a base
    - Create evaluation criteria for your domain
-   - Set up automated evals in Arize
+   - Build custom evaluation metrics
 
 ## Common Use Cases (Built by Students)
 
@@ -205,8 +203,8 @@ Students have successfully adapted this codebase for:
 
 2) Configure environment
 - Copy `backend/.env.example` to `backend/.env`.
-- Set one LLM key: `OPENAI_API_KEY=...` or `OPENROUTER_API_KEY=...`.
-- Optional: `ARIZE_SPACE_ID` and `ARIZE_API_KEY` for tracing.
+- Set your LLM key: `OPENAI_API_KEY=...` or `OPENROUTER_API_KEY=...`.
+- Optional: Add API keys for enhanced features (see Optional Features section).
 
 3) Install dependencies
 ```bash
@@ -282,8 +280,10 @@ docker-compose up --build
 - GET `/cities.json` → autocomplete data for destination input.
 - GET `/static/*` → serves frontend assets (CSS, images, etc.).
 
-## Notes on Tracing (Optional)
-- If `ARIZE_SPACE_ID` and `ARIZE_API_KEY` are set, OpenInference exports spans for agents/tools/LLM calls. View at https://app.arize.com.
+## Logging & Debugging
+- Agent execution logs are printed to the terminal/console
+- Check backend logs for detailed information about agent calls
+- Use browser DevTools to inspect frontend behavior
 
 ## Optional Features
 
@@ -364,7 +364,6 @@ live-server frontend --port=3000 --open=/index.html
 ## Troubleshooting
 
 - **401/empty results**: Verify `OPENAI_API_KEY` or `OPENROUTER_API_KEY` in `backend/.env`
-- **No traces**: Ensure Arize credentials are set and reachable
 - **Port conflicts**: Stop existing services on 3000/8000 or change ports
 - **RAG not working**: Check `ENABLE_RAG=1` and `OPENAI_API_KEY` are both set
 - **Slow responses**: Web search APIs may timeout; LLM fallback will handle it
@@ -373,8 +372,9 @@ live-server frontend --port=3000 --open=/index.html
 - **Generic suggestions**: Ensure backend is running latest code with specific naming rules
 - **Button links not working**: Check that markdown renderer is properly configured
 - **Node.js issues**: Use `nvm use` to switch to correct Node.js version (LTS)
+- **Backend crashes**: Check terminal logs for error details and stack traces
 
 ## Deploy on Render
 - This repo includes `render.yaml`. Connect your GitHub repo in Render and deploy as a Web Service.
 - Render will run: `pip install -r backend/requirements.txt` and `uvicorn main:app --host 0.0.0.0 --port $PORT`.
-- Set `OPENAI_API_KEY` (or `OPENROUTER_API_KEY`) and optional Arize vars in the Render dashboard.
+- Set `OPENAI_API_KEY` (or `OPENROUTER_API_KEY`) and optional API keys (Tavily, Unsplash) in the Render dashboard.
