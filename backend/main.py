@@ -1039,7 +1039,7 @@ MUST GENERATE: {len(missing_days)} day(s) - {', '.join([f'Day {d}' for d in miss
 ---
 """
             content += missing_day_content
-                print(f"✅ Added fallback content for Day {day}")
+            print(f"✅ Added fallback content for Day {day}")
 
     # Replace image placeholders with actual city images
     for day in range(1, duration_num + 1):
