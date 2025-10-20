@@ -13,17 +13,21 @@ from pathlib import Path
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
 
-# Arize instrumentation
-from arize.otel import register
-
-tracer_provider = register(
-    space_id = "U3BhY2U6MjA1Ok9SZXY=", # in app space settings page
-    api_key = "ak-38963011-5f7d-44c7-9bb6-79405a02885c-iMsG0P-y9eaSauXCoxmEZPl3pM4omBh0", # in app space settings page
-    project_name = "ai-trip-planner",
-)
-
-from openinference.instrumentation.openai import OpenAIInstrumentor
-OpenAIInstrumentor().instrument(tracer_provider=tracer_provider)
+# Arize instrumentation (optional)
+try:
+    from arize.otel import register
+    
+    tracer_provider = register(
+        space_id = "U3BhY2U6MjA1Ok9SZXY=", # in app space settings page
+        api_key = "ak-38963011-5f7d-44c7-9bb6-79405a02885c-iMsG0P-y9eaSauXCoxmEZPl3pM4omBh0", # in app space settings page
+        project_name = "ai-trip-planner",
+    )
+    
+    from openinference.instrumentation.openai import OpenAIInstrumentor
+    OpenAIInstrumentor().instrument(tracer_provider=tracer_provider)
+    print("✅ Arize instrumentation enabled")
+except ImportError:
+    print("⚠️ Arize not installed - tracing disabled")
 
 # LangGraph + LangChain
 from langgraph.graph import StateGraph, END, START
