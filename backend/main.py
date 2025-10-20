@@ -13,7 +13,17 @@ from pathlib import Path
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
 
-# No tracing/observability - keeping it simple
+# Arize instrumentation
+from arize.otel import register
+
+tracer_provider = register(
+    space_id = "U3BhY2U6MjA1Ok9SZXY=", # in app space settings page
+    api_key = "ak-38963011-5f7d-44c7-9bb6-79405a02885c-iMsG0P-y9eaSauXCoxmEZPl3pM4omBh0", # in app space settings page
+    project_name = "ai-trip-planner",
+)
+
+from openinference.instrumentation.openai import OpenAIInstrumentor
+OpenAIInstrumentor().instrument(tracer_provider=tracer_provider)
 
 # LangGraph + LangChain
 from langgraph.graph import StateGraph, END, START
@@ -586,7 +596,7 @@ def research_agent(state: TripState) -> TripState:
     tool_results = []
     
     # Research agent execution
-            res = agent.invoke(messages)
+    res = agent.invoke(messages)
     
     # Collect tool calls and execute them
     if getattr(res, "tool_calls", None):
@@ -605,7 +615,7 @@ def research_agent(state: TripState) -> TripState:
         messages.append(SystemMessage(content=synthesis_prompt))
         
         # Synthesis step
-            final_res = llm.invoke(messages)
+        final_res = llm.invoke(messages)
         out = final_res.content
     else:
         out = res.content
@@ -631,7 +641,7 @@ def budget_agent(state: TripState) -> TripState:
     calls: List[Dict[str, Any]] = []
     
     # Budget agent execution
-            res = agent.invoke(messages)
+    res = agent.invoke(messages)
     
     if getattr(res, "tool_calls", None):
         for c in res.tool_calls:
@@ -648,7 +658,7 @@ def budget_agent(state: TripState) -> TripState:
         messages.append(SystemMessage(content=synthesis_prompt))
         
         # Synthesis step
-            final_res = llm.invoke(messages)
+        final_res = llm.invoke(messages)
         out = final_res.content
     else:
         out = res.content
@@ -701,7 +711,7 @@ def local_agent(state: TripState) -> TripState:
     calls: List[Dict[str, Any]] = []
     
     # Local agent execution
-            res = agent.invoke(messages)
+    res = agent.invoke(messages)
     
     if getattr(res, "tool_calls", None):
         for c in res.tool_calls:
@@ -718,7 +728,7 @@ def local_agent(state: TripState) -> TripState:
         messages.append(SystemMessage(content=synthesis_prompt))
         
         # Synthesis step
-            final_res = llm.invoke(messages)
+        final_res = llm.invoke(messages)
         out = final_res.content
     else:
         out = res.content
@@ -942,7 +952,7 @@ def itinerary_agent(state: TripState) -> TripState:
     }
     
     # Itinerary agent execution
-            res = llm.invoke([SystemMessage(content=prompt_t.format(**vars_))])
+    res = llm.invoke([SystemMessage(content=prompt_t.format(**vars_))])
     
     # Process the content to replace image placeholders with real city images
     content = res.content
@@ -1304,8 +1314,6 @@ def health():
     return {"status": "healthy", "service": "ai-trip-planner"}
 
 
-# No tracing initialization - keeping it simple
-
 @app.post("/plan-trip", response_model=TripResponse)
 def plan_trip(req: TripRequest):
     graph = build_graph()
@@ -1319,7 +1327,7 @@ def plan_trip(req: TripRequest):
     }
     
     # Execute the graph
-            out = graph.invoke(state)
+    out = graph.invoke(state)
     
     # Fix Unsplash URLs in final result
     final_result = out.get("final", "")
