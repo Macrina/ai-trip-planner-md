@@ -13,28 +13,40 @@ from pathlib import Path
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
 
-# Arize instrumentation (optional)
+# Arize AX observability setup
 try:
     from arize.otel import register
+    from openinference.instrumentation.openai import OpenAIInstrumentor
+    from openinference.instrumentation.langchain import LangChainInstrumentor
     
+    # Arize AX configuration
     arize_space_id = os.getenv("ARIZE_SPACE_ID")
     arize_api_key = os.getenv("ARIZE_API_KEY")
     arize_project_name = os.getenv("ARIZE_PROJECT_NAME", "ai-trip-planner")
     
     if arize_space_id and arize_api_key:
+        # Register Arize AX tracer provider
         tracer_provider = register(
             space_id=arize_space_id,
             api_key=arize_api_key,
             project_name=arize_project_name,
         )
         
-        from openinference.instrumentation.openai import OpenAIInstrumentor
+        # Instrument OpenAI and LangChain
         OpenAIInstrumentor().instrument(tracer_provider=tracer_provider)
-        print("✅ Arize instrumentation enabled")
+        LangChainInstrumentor().instrument(tracer_provider=tracer_provider)
+        
+        print(f"✅ Arize AX instrumentation enabled - Project: {arize_project_name}")
+        print(f"📊 Arize Space ID: {arize_space_id[:10]}...")
     else:
-        print("⚠️ Arize credentials not found - tracing disabled")
-except ImportError:
-    print("⚠️ Arize not installed - tracing disabled")
+        print("⚠️ Arize AX credentials not found - tracing disabled")
+        print("💡 Set ARIZE_SPACE_ID and ARIZE_API_KEY environment variables")
+        
+except ImportError as e:
+    print(f"⚠️ Arize not installed - tracing disabled: {e}")
+    print("💡 Install with: pip install arize openinference-instrumentation-openai openinference-instrumentation-langchain")
+except Exception as e:
+    print(f"⚠️ Arize AX setup failed - tracing disabled: {e}")
 
 # LangGraph + LangChain
 from langgraph.graph import StateGraph, END, START
