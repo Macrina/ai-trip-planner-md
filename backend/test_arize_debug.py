@@ -17,16 +17,20 @@ print(f"OPENAI_API_KEY present: {bool(os.getenv('OPENAI_API_KEY'))}")
 from arize.otel import register
 from opentelemetry.sdk.trace.export import ConsoleSpanExporter, SimpleSpanProcessor
 
+arize_space_id = os.getenv("ARIZE_SPACE_ID", "U3BhY2U6MjA1Ok9SZXY=")
+arize_api_key = os.getenv("ARIZE_API_KEY", "ak-38963011-5f7d-44c7-9bb6-79405a02885c-iMsG0P-y9eaSauXCoxmEZPl3pM4omBh0")
+arize_project_name = os.getenv("ARIZE_PROJECT_NAME", "ai-trip-planner")
+
 print("\n🔧 Registering with Arize...")
-print(f"Space ID: U3BhY2U6MjA1Ok9SZXY=")
-print(f"API Key: ak-38963011-5f7d-44c7-9bb6-79405a02885c-iMsG0P-y9eaSauXCoxmEZPl3pM4omBh0")
-print(f"Project: ai-trip-planner")
+print(f"Space ID: {arize_space_id}")
+print(f"API Key: {arize_api_key}")
+print(f"Project: {arize_project_name}")
 
 try:
     tracer_provider = register(
-        space_id="U3BhY2U6MjA1Ok9SZXY=",
-        api_key="ak-38963011-5f7d-44c7-9bb6-79405a02885c-iMsG0P-y9eaSauXCoxmEZPl3pM4omBh0",
-        project_name="ai-trip-planner",
+        space_id=arize_space_id,
+        api_key=arize_api_key,
+        project_name=arize_project_name,
     )
     print("✅ Tracer provider registered successfully")
     

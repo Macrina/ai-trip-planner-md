@@ -17,15 +17,22 @@ load_dotenv(find_dotenv())
 try:
     from arize.otel import register
     
-    tracer_provider = register(
-        space_id = "U3BhY2U6MjA1Ok9SZXY=", # in app space settings page
-        api_key = "ak-38963011-5f7d-44c7-9bb6-79405a02885c-iMsG0P-y9eaSauXCoxmEZPl3pM4omBh0", # in app space settings page
-        project_name = "ai-trip-planner",
-    )
+    arize_space_id = os.getenv("ARIZE_SPACE_ID")
+    arize_api_key = os.getenv("ARIZE_API_KEY")
+    arize_project_name = os.getenv("ARIZE_PROJECT_NAME", "ai-trip-planner")
     
-    from openinference.instrumentation.openai import OpenAIInstrumentor
-    OpenAIInstrumentor().instrument(tracer_provider=tracer_provider)
-    print("✅ Arize instrumentation enabled")
+    if arize_space_id and arize_api_key:
+        tracer_provider = register(
+            space_id=arize_space_id,
+            api_key=arize_api_key,
+            project_name=arize_project_name,
+        )
+        
+        from openinference.instrumentation.openai import OpenAIInstrumentor
+        OpenAIInstrumentor().instrument(tracer_provider=tracer_provider)
+        print("✅ Arize instrumentation enabled")
+    else:
+        print("⚠️ Arize credentials not found - tracing disabled")
 except ImportError:
     print("⚠️ Arize not installed - tracing disabled")
 

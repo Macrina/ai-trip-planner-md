@@ -10,9 +10,9 @@ load_dotenv(find_dotenv())
 from arize.otel import register
 
 tracer_provider = register(
-    space_id = "U3BhY2U6MjA1Ok9SZXY=",
-    api_key = "ak-38963011-5f7d-44c7-9bb6-79405a02885c-iMsG0P-y9eaSauXCoxmEZPl3pM4omBh0",
-    project_name = "ai-trip-planner",
+    space_id=os.getenv("ARIZE_SPACE_ID", "U3BhY2U6MjA1Ok9SZXY="),
+    api_key=os.getenv("ARIZE_API_KEY", "ak-38963011-5f7d-44c7-9bb6-79405a02885c-iMsG0P-y9eaSauXCoxmEZPl3pM4omBh0"),
+    project_name=os.getenv("ARIZE_PROJECT_NAME", "ai-trip-planner"),
 )
 
 from openinference.instrumentation.openai import OpenAIInstrumentor
