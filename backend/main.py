@@ -586,7 +586,7 @@ def research_agent(state: TripState) -> TripState:
     tool_results = []
     
     # Research agent execution
-    res = agent.invoke(messages)
+            res = agent.invoke(messages)
     
     # Collect tool calls and execute them
     if getattr(res, "tool_calls", None):
@@ -605,7 +605,7 @@ def research_agent(state: TripState) -> TripState:
         messages.append(SystemMessage(content=synthesis_prompt))
         
         # Synthesis step
-        final_res = llm.invoke(messages)
+            final_res = llm.invoke(messages)
         out = final_res.content
     else:
         out = res.content
@@ -631,7 +631,7 @@ def budget_agent(state: TripState) -> TripState:
     calls: List[Dict[str, Any]] = []
     
     # Budget agent execution
-    res = agent.invoke(messages)
+            res = agent.invoke(messages)
     
     if getattr(res, "tool_calls", None):
         for c in res.tool_calls:
@@ -648,7 +648,7 @@ def budget_agent(state: TripState) -> TripState:
         messages.append(SystemMessage(content=synthesis_prompt))
         
         # Synthesis step
-        final_res = llm.invoke(messages)
+            final_res = llm.invoke(messages)
         out = final_res.content
     else:
         out = res.content
@@ -701,7 +701,7 @@ def local_agent(state: TripState) -> TripState:
     calls: List[Dict[str, Any]] = []
     
     # Local agent execution
-    res = agent.invoke(messages)
+            res = agent.invoke(messages)
     
     if getattr(res, "tool_calls", None):
         for c in res.tool_calls:
@@ -718,7 +718,7 @@ def local_agent(state: TripState) -> TripState:
         messages.append(SystemMessage(content=synthesis_prompt))
         
         # Synthesis step
-        final_res = llm.invoke(messages)
+            final_res = llm.invoke(messages)
         out = final_res.content
     else:
         out = res.content
@@ -942,7 +942,7 @@ def itinerary_agent(state: TripState) -> TripState:
     }
     
     # Itinerary agent execution
-    res = llm.invoke([SystemMessage(content=prompt_t.format(**vars_))])
+            res = llm.invoke([SystemMessage(content=prompt_t.format(**vars_))])
     
     # Process the content to replace image placeholders with real city images
     content = res.content
@@ -1018,8 +1018,8 @@ MUST GENERATE: {len(missing_days)} day(s) - {', '.join([f'Day {d}' for d in miss
         except Exception as e:
             # Fallback: Use basic template
             print(f"⚠️ Retry failed: {e}. Using fallback template for: {missing_days}")
-            for day in missing_days:
-                missing_day_content = f"""
+        for day in missing_days:
+            missing_day_content = f"""
 
 ### Day {day}: Explore {destination}
 
@@ -1042,11 +1042,11 @@ MUST GENERATE: {len(missing_days)} day(s) - {', '.join([f'Day {d}' for d in miss
 
 ---
 """
-                budget_pos = content.find("## 💰 Budget Snapshot")
-                if budget_pos != -1:
-                    content = content[:budget_pos] + missing_day_content + content[budget_pos:]
-                else:
-                    content += missing_day_content
+            budget_pos = content.find("## 💰 Budget Snapshot")
+            if budget_pos != -1:
+                content = content[:budget_pos] + missing_day_content + content[budget_pos:]
+            else:
+                content += missing_day_content
                 print(f"✅ Added fallback content for Day {day}")
 
     # Replace image placeholders with actual city images
@@ -1078,8 +1078,8 @@ MUST GENERATE: {len(missing_days)} day(s) - {', '.join([f'Day {d}' for d in miss
     # Note: /s/photos/ is the correct working format, not /search/photos/
     
     # Convert Unsplash URLs from + signs to hyphens
-    import re
-    
+        import re
+        
     def fix_unsplash_url(match):
         """Convert Unsplash URLs to use hyphens instead of plus signs"""
         url = match.group(0)
@@ -1319,7 +1319,7 @@ def plan_trip(req: TripRequest):
     }
     
     # Execute the graph
-    out = graph.invoke(state)
+            out = graph.invoke(state)
     
     # Fix Unsplash URLs in final result
     final_result = out.get("final", "")
