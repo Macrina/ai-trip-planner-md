@@ -18,7 +18,6 @@ A **production-ready multi-agent system** built for learning and customization. 
 - **Modern Tabbed Interface**: Day-by-day itinerary navigation with smooth transitions
 - **Action Buttons**: Beautiful, color-coded buttons for directions, tickets, and photos
 - **Responsive Design**: Works perfectly on desktop and mobile devices
-- **Accordion Sidebar**: Expandable sections for budget, tips, and useful links
 - **Smart Autocomplete**: Destination input with static database + API fallback
 
 ### 🖼️ Visual Enhancements
@@ -52,7 +51,6 @@ A **production-ready multi-agent system** built for learning and customization. 
 - **Action Buttons**: Color-coded buttons for directions (blue), tickets (green), and photos (purple)
 - **Responsive Design**: Works perfectly on desktop and mobile with full-height layout
 - **Smart Autocomplete**: Destination input with static database + API fallback
-- **Accordion Sidebar**: Expandable sections for Budget, Tips, and Useful Links
 
 ### 🖼️ Visual Experience
 - **Destination Images**: Real city photos for each day using Unsplash API

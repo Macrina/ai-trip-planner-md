@@ -908,27 +908,6 @@ def itinerary_agent(state: TripState) -> TripState:
         "...",
         "---",
         "",
-        "---",
-        "",
-        "## 💰 Budget Snapshot",
-        "- 🏨 Accommodation: €X/night",
-        "- 🍽️ Food: €X/day",
-        "- 🎫 Activities: €X/day",
-        "- 🚇 Transport: €X/day",
-        "**Total: €X/day**",
-        "",
-        "## 🎒 Quick Tips",
-        "- 💡 Tip 1 (one line)",
-        "- 💡 Tip 2 (one line)",
-        "- 💡 Tip 3 (one line)",
-        "",
-        "## 📱 Useful Links",
-        "- 🗺️ [Google Maps - {destination}](https://maps.google.com/?q={destination})",
-        "- 🚇 [Public Transport](https://www.rome2rio.com/s/{destination})",
-        "- 🎫 [Book Tours](https://www.getyourguide.com/s/?q={destination})",
-        "",
-        "---",
-        "",
         "Agent inputs to use:",
         "Research: {research}",
         "Budget: {budget}",
@@ -1025,12 +1004,8 @@ MUST GENERATE: {len(missing_days)} day(s) - {', '.join([f'Day {d}' for d in miss
             still_missing = [d for d in missing_days if f"### Day {d}:" not in retry_content]
             
             if not still_missing:
-                # Success! Insert retry content
-                budget_pos = content.find("## 💰 Budget Snapshot")
-                if budget_pos != -1:
-                    content = content[:budget_pos] + "\n\n" + retry_content + "\n\n" + content[budget_pos:]
-                else:
-                    content += "\n\n" + retry_content
+                # Success! Append retry content
+                content += "\n\n" + retry_content
                 print(f"✅ Retry successful! Generated missing days: {missing_days}")
             else:
                 print(f"⚠️ Retry partial success. Still missing: {still_missing}")
@@ -1063,11 +1038,7 @@ MUST GENERATE: {len(missing_days)} day(s) - {', '.join([f'Day {d}' for d in miss
 
 ---
 """
-            budget_pos = content.find("## 💰 Budget Snapshot")
-            if budget_pos != -1:
-                content = content[:budget_pos] + missing_day_content + content[budget_pos:]
-            else:
-                content += missing_day_content
+            content += missing_day_content
                 print(f"✅ Added fallback content for Day {day}")
 
     # Replace image placeholders with actual city images
