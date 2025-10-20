@@ -1014,8 +1014,8 @@ MUST GENERATE: {len(missing_days)} day(s) - {', '.join([f'Day {d}' for d in miss
         except Exception as e:
             # Fallback: Use basic template
             print(f"⚠️ Retry failed: {e}. Using fallback template for: {missing_days}")
-        for day in missing_days:
-            missing_day_content = f"""
+            for day in missing_days:
+                missing_day_content = f"""
 
 ### Day {day}: Explore {destination}
 
@@ -1038,8 +1038,8 @@ MUST GENERATE: {len(missing_days)} day(s) - {', '.join([f'Day {d}' for d in miss
 
 ---
 """
-            content += missing_day_content
-            print(f"✅ Added fallback content for Day {day}")
+                content += missing_day_content
+                print(f"✅ Added fallback content for Day {day}")
 
     # Replace image placeholders with actual city images
     for day in range(1, duration_num + 1):
