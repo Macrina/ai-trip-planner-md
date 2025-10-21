@@ -193,42 +193,54 @@ class LocalGuideRetriever:
         Returns:
             List of dicts with 'content', 'metadata', and 'score' keys
         """
-        if not ENABLE_RAG or self.is_empty:
-            return []
-
-        # Use vector search if available, otherwise fall back to keywords
-        if not self._vectorstore:
-            return self._keyword_fallback(destination, interests, k=k)
-
-        query = destination
-        if interests:
-            query = f"{destination} with interests {interests}"
+        import custom_tracing as ct
         
-        try:
-            # LangChain retriever ensures embeddings + searches are traced
-            retriever = self._vectorstore.as_retriever(search_kwargs={"k": max(k, 4)})
-            docs = retriever.invoke(query)
-        except Exception:
-            return self._keyword_fallback(destination, interests, k=k)
+        with ct.trace_rag_retrieval(destination, interests, k) as tracer:
+            if not ENABLE_RAG or self.is_empty:
+                tracer.failed()
+                return []
 
-        # Format results with metadata and scores
-        top_docs = docs[:k]
-        results = []
-        for doc in top_docs:
-            score_val: float = 0.0
-            if isinstance(doc.metadata, dict):
-                maybe_score = doc.metadata.get("score")
-                if isinstance(maybe_score, (int, float)):
-                    score_val = float(maybe_score)
-            results.append({
-                "content": doc.page_content,
-                "metadata": doc.metadata,
-                "score": score_val,
-            })
+            # Use vector search if available, otherwise fall back to keywords
+            if not self._vectorstore:
+                results = self._keyword_fallback(destination, interests, k=k)
+                tracer.fallback("keyword", len(results))
+                return results
 
-        if not results:
-            return self._keyword_fallback(destination, interests, k=k)
-        return results
+            query = destination
+            if interests:
+                query = f"{destination} with interests {interests}"
+            
+            try:
+                # LangChain retriever ensures embeddings + searches are traced
+                retriever = self._vectorstore.as_retriever(search_kwargs={"k": max(k, 4)})
+                docs = retriever.invoke(query)
+            except Exception:
+                results = self._keyword_fallback(destination, interests, k=k)
+                tracer.fallback("keyword", len(results))
+                return results
+
+            # Format results with metadata and scores
+            top_docs = docs[:k]
+            results = []
+            for doc in top_docs:
+                score_val: float = 0.0
+                if isinstance(doc.metadata, dict):
+                    maybe_score = doc.metadata.get("score")
+                    if isinstance(maybe_score, (int, float)):
+                        score_val = float(maybe_score)
+                results.append({
+                    "content": doc.page_content,
+                    "metadata": doc.metadata,
+                    "score": score_val,
+                })
+
+            if not results:
+                fallback_results = self._keyword_fallback(destination, interests, k=k)
+                tracer.fallback("keyword", len(fallback_results))
+                return fallback_results
+            
+            tracer.success("vector", len(results))
+            return results
 
     def _keyword_fallback(self, destination: str, interests: Optional[str], *, k: int) -> List[Dict[str, Any]]:
         """Simple keyword-based retrieval when embeddings unavailable.
@@ -297,63 +309,72 @@ def _search_api(query: str) -> Optional[str]:
     This demonstrates graceful degradation: tools work with or without API keys.
     Students can enable real search by adding TAVILY_API_KEY or SERPAPI_API_KEY.
     """
+    import custom_tracing as ct
+    
     query = query.strip()
     if not query:
         return None
+    
+    with ct.trace_search_api(query) as tracer:
+        # Try Tavily first (recommended for AI apps)
+        tavily_key = os.getenv("TAVILY_API_KEY")
+        if tavily_key:
+            try:
+                with httpx.Client(timeout=SEARCH_TIMEOUT) as client:
+                    resp = client.post(
+                        "https://api.tavily.com/search",
+                        json={
+                            "api_key": tavily_key,
+                            "query": query,
+                            "max_results": 3,
+                            "search_depth": "basic",
+                            "include_answer": True,
+                        },
+                    )
+                    resp.raise_for_status()
+                    data = resp.json()
+                    answer = data.get("answer") or ""
+                    snippets = [
+                        item.get("content") or item.get("snippet") or ""
+                        for item in data.get("results", [])
+                    ]
+                    combined = " ".join([answer] + snippets).strip()
+                    if combined:
+                        result = _compact(combined)
+                        tracer.success("tavily", len(result))
+                        return result
+            except Exception:
+                pass  # Fail gracefully, try next option
 
-    # Try Tavily first (recommended for AI apps)
-    tavily_key = os.getenv("TAVILY_API_KEY")
-    if tavily_key:
-        try:
-            with httpx.Client(timeout=SEARCH_TIMEOUT) as client:
-                resp = client.post(
-                    "https://api.tavily.com/search",
-                    json={
-                        "api_key": tavily_key,
-                        "query": query,
-                        "max_results": 3,
-                        "search_depth": "basic",
-                        "include_answer": True,
-                    },
-                )
-                resp.raise_for_status()
-                data = resp.json()
-                answer = data.get("answer") or ""
-                snippets = [
-                    item.get("content") or item.get("snippet") or ""
-                    for item in data.get("results", [])
-                ]
-                combined = " ".join([answer] + snippets).strip()
-                if combined:
-                    return _compact(combined)
-        except Exception:
-            pass  # Fail gracefully, try next option
+        # Try SerpAPI as fallback
+        serp_key = os.getenv("SERPAPI_API_KEY")
+        if serp_key:
+            try:
+                with httpx.Client(timeout=SEARCH_TIMEOUT) as client:
+                    resp = client.get(
+                        "https://serpapi.com/search",
+                        params={
+                            "api_key": serp_key,
+                            "engine": "google",
+                            "num": 5,
+                            "q": query,
+                        },
+                    )
+                    resp.raise_for_status()
+                    data = resp.json()
+                    organic = data.get("organic_results", [])
+                    snippets = [item.get("snippet", "") for item in organic]
+                    combined = " ".join(snippets).strip()
+                    if combined:
+                        result = _compact(combined)
+                        tracer.fallback("serpapi", len(result))
+                        return result
+            except Exception:
+                pass  # Fail gracefully
 
-    # Try SerpAPI as fallback
-    serp_key = os.getenv("SERPAPI_API_KEY")
-    if serp_key:
-        try:
-            with httpx.Client(timeout=SEARCH_TIMEOUT) as client:
-                resp = client.get(
-                    "https://serpapi.com/search",
-                    params={
-                        "api_key": serp_key,
-                        "engine": "google",
-                        "num": 5,
-                        "q": query,
-                    },
-                )
-                resp.raise_for_status()
-                data = resp.json()
-                organic = data.get("organic_results", [])
-                snippets = [item.get("snippet", "") for item in organic]
-                combined = " ".join(snippets).strip()
-                if combined:
-                    return _compact(combined)
-        except Exception:
-            pass  # Fail gracefully
-
-    return None  # No search APIs configured
+        # No APIs available
+        tracer.failed()
+        return None  # No search APIs configured
 
 
 def _llm_fallback(instruction: str, context: Optional[str] = None) -> str:
@@ -361,6 +382,15 @@ def _llm_fallback(instruction: str, context: Optional[str] = None) -> str:
     
     This ensures tools always return useful information, even without API keys.
     """
+    import custom_tracing as ct
+    
+    # Log that we're using LLM fallback
+    ct.add_event("Using LLM fallback", {
+        "instruction_length": len(instruction),
+        "has_context": context is not None
+    })
+    ct.set_attribute("fallback.type", "llm")
+    
     prompt = "Respond with 200 characters or less.\n" + instruction.strip()
     if context:
         prompt += "\nContext:\n" + context.strip()
@@ -368,7 +398,11 @@ def _llm_fallback(instruction: str, context: Optional[str] = None) -> str:
         SystemMessage(content="You are a concise travel assistant."),
         HumanMessage(content=prompt),
     ])
-    return _compact(response.content)
+    
+    result = _compact(response.content)
+    ct.set_attribute("fallback.response_length", len(result))
+    
+    return result
 
 
 def _with_prefix(prefix: str, summary: str) -> str:
@@ -760,6 +794,8 @@ def local_agent(state: TripState) -> TripState:
 
 
 def itinerary_agent(state: TripState) -> TripState:
+    import custom_tracing as ct
+    
     req = state["trip_request"]
     destination = req["destination"]
     duration = req["duration"]
@@ -953,24 +989,26 @@ def itinerary_agent(state: TripState) -> TripState:
         "user_input": user_input,
     }
     
-    # Itinerary agent execution
-    res = llm.invoke([SystemMessage(content=prompt_t.format(**vars_))])
-    
-    # Process the content to replace image placeholders with real city images
-    content = res.content
-    
-    # Validate that all required days are present
-    missing_days = []
-    for day in range(1, duration_num + 1):
-        day_header = f"### Day {day}:"
-        if day_header not in content:
-            missing_days.append(day)
-    
-    if missing_days:
-        print(f"⚠️ Missing days detected: {missing_days}. Attempting retry...")
+    # Itinerary agent execution with tracing
+    with ct.trace_itinerary_generation(destination, duration_num) as tracer:
+        res = llm.invoke([SystemMessage(content=prompt_t.format(**vars_))])
         
-        # RETRY: Generate missing days with focused prompt
-        retry_prompt = f"""You are creating an itinerary for {destination} for {duration_num} days.
+        # Process the content to replace image placeholders with real city images
+        content = res.content
+        
+        # Validate that all required days are present
+        missing_days = []
+        for day in range(1, duration_num + 1):
+            day_header = f"### Day {day}:"
+            if day_header not in content:
+                missing_days.append(day)
+        
+        if missing_days:
+            print(f"⚠️ Missing days detected: {missing_days}. Attempting retry...")
+            tracer.missing_days(duration_num - len(missing_days), missing_days)
+            
+            # RETRY: Generate missing days with focused prompt
+            retry_prompt = f"""You are creating an itinerary for {destination} for {duration_num} days.
 You already generated some days, but Days {', '.join(map(str, missing_days))} are MISSING.
 
 CRITICAL: Generate ONLY these specific days: {', '.join([f'Day {d}' for d in missing_days])}
@@ -1007,27 +1045,30 @@ Local tips: {vars_['local'][:200]}
 
 MUST GENERATE: {len(missing_days)} day(s) - {', '.join([f'Day {d}' for d in missing_days])}"""
 
-        try:
-            print(f"🔄 Retrying to generate days: {missing_days}")
-            retry_res = llm.invoke([SystemMessage(content=retry_prompt)])
-            retry_content = retry_res.content
-            
-            # Verify retry success
-            still_missing = [d for d in missing_days if f"### Day {d}:" not in retry_content]
-            
-            if not still_missing:
-                # Success! Append retry content
-                content += "\n\n" + retry_content
-                print(f"✅ Retry successful! Generated missing days: {missing_days}")
-            else:
-                print(f"⚠️ Retry partial success. Still missing: {still_missing}")
-                raise Exception(f"Still missing days: {still_missing}")
+            try:
+                print(f"🔄 Retrying to generate days: {missing_days}")
+                retry_res = llm.invoke([SystemMessage(content=retry_prompt)])
+                retry_content = retry_res.content
                 
-        except Exception as e:
-            # Fallback: Use basic template
-            print(f"⚠️ Retry failed: {e}. Using fallback template for: {missing_days}")
-            for day in missing_days:
-                missing_day_content = f"""
+                # Verify retry success
+                still_missing = [d for d in missing_days if f"### Day {d}:" not in retry_content]
+                
+                if not still_missing:
+                    # Success! Append retry content
+                    content += "\n\n" + retry_content
+                    print(f"✅ Retry successful! Generated missing days: {missing_days}")
+                    tracer.retry_success(duration_num)
+                else:
+                    print(f"⚠️ Retry partial success. Still missing: {still_missing}")
+                    raise Exception(f"Still missing days: {still_missing}")
+                    
+            except Exception as e:
+                # Fallback: Use basic template
+                print(f"⚠️ Retry failed: {e}. Using fallback template for: {missing_days}")
+                tracer.fallback_template(missing_days)
+                
+                for day in missing_days:
+                    missing_day_content = f"""
 
 ### Day {day}: Explore {destination}
 
@@ -1050,8 +1091,12 @@ MUST GENERATE: {len(missing_days)} day(s) - {', '.join([f'Day {d}' for d in miss
 
 ---
 """
-                content += missing_day_content
-                print(f"✅ Added fallback content for Day {day}")
+                    content += missing_day_content
+                    print(f"✅ Added fallback content for Day {day}")
+        else:
+            # All days generated successfully
+            actual_days = content.count("### Day ")
+            tracer.success(actual_days)
 
     # Replace image placeholders with actual city images
     for day in range(1, duration_num + 1):
@@ -1310,18 +1355,31 @@ def health():
 
 @app.post("/plan-trip", response_model=TripResponse)
 def plan_trip(req: TripRequest):
-    graph = build_graph()
+    import custom_tracing as ct
+    from opentelemetry import trace
     
-    # Only include necessary fields in initial state
-    # Agent outputs (research, budget, local, final) will be added during execution
-    state = {
-        "messages": [],
-        "trip_request": req.model_dump(),
-        "tool_calls": [],
-    }
+    tracer = trace.get_tracer(__name__)
     
-    # Execute the graph
-    out = graph.invoke(state)
+    with tracer.start_as_current_span("plan_trip_request") as span:
+        # Add request metadata
+        ct.trace_request_metadata(req)
+        
+        graph = build_graph()
+        
+        # Only include necessary fields in initial state
+        # Agent outputs (research, budget, local, final) will be added during execution
+        state = {
+            "messages": [],
+            "trip_request": req.model_dump(),
+            "tool_calls": [],
+        }
+        
+        # Execute the graph
+        out = graph.invoke(state)
+        
+        # Add tool call metrics
+        tool_calls = out.get("tool_calls", [])
+        ct.trace_tool_calls(tool_calls)
     
     # Fix Unsplash URLs in final result
     final_result = out.get("final", "")
@@ -1370,6 +1428,19 @@ def plan_trip(req: TripRequest):
             print(f"✅ Fixed {unsplash_count} Unsplash URLs")
             if sample_urls:
                 print(f"   Sample: {sample_urls[0]}")
+        
+        # Run validation on final result
+        duration_num = 1
+        try:
+            duration_str = req.duration.lower().replace("days", "").replace("day", "").strip()
+            duration_num = int(duration_str) if duration_str.isdigit() else 1
+            if duration_num > 5:
+                duration_num = 5
+        except:
+            duration_num = 1
+        
+        validation_results = ct.validate_itinerary_constraints(final_result, duration_num)
+        ct.trace_validation_results(validation_results)
     
     return TripResponse(result=final_result, tool_calls=out.get("tool_calls", []))
 
